@@ -4,7 +4,6 @@ import (
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/mvc"
 	"xxx.com/projectweb/src/app/controller"
-	"xxx.com/projectweb/src/app/middleware"
 )
 
 // Configure registers the necessary routes to the app.
@@ -14,7 +13,6 @@ func Configure(a *iris.Application) {
 	index.Handle(indexC)
 
 	admin := mvc.New(a.Party("/admin"))
-	admin.Router.Use(middleware.BasicAuth)
 	admin.Handle(new(controller.AdminController))
 
 	// -------------------------------------------------------
