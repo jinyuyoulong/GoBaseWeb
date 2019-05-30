@@ -7,8 +7,8 @@ import (
 
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/mvc"
-	"ielpm.cn/projectweb/src/app/bootstrap/service"
-	"ielpm.cn/projectweb/src/app/models"
+	"xxx.com/projectweb/src/app/bootstrap/service"
+	"xxx.com/projectweb/src/app/models"
 )
 
 // AdminController admin

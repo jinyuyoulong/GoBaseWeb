@@ -8,11 +8,11 @@ import (
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/mvc"
 
-	"ielpm.cn/projectweb/src/app/bootstrap/service"
-	"ielpm.cn/projectweb/src/app/config"
-	"ielpm.cn/projectweb/src/app/config/diserver"
-	"ielpm.cn/projectweb/src/app/library/datasource"
-	"ielpm.cn/projectweb/src/app/models"
+	"xxx.com/projectweb/src/app/bootstrap/service"
+	"xxx.com/projectweb/src/app/config"
+	"xxx.com/projectweb/src/app/config/diserver"
+	"xxx.com/projectweb/src/app/library/datasource"
+	"xxx.com/projectweb/src/app/models"
 )
 
 // IndexController index controller

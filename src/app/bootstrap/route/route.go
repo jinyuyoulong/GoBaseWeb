@@ -3,8 +3,8 @@ package route
 import (
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/mvc"
-	"ielpm.cn/projectweb/src/app/controller"
-	"ielpm.cn/projectweb/src/app/middleware"
+	"xxx.com/projectweb/src/app/controller"
+	"xxx.com/projectweb/src/app/middleware"
 )
 
 // Configure registers the necessary routes to the app.

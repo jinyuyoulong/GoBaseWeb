@@ -1,4 +1,4 @@
-module ielpm.cn/projectweb
+module xxx.com/projectweb
 
 go 1.12
 

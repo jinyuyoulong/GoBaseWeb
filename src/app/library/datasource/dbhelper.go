@@ -10,8 +10,8 @@ import (
 	_ "github.com/go-sql-driver/mysql" // 使用MySQL的隐式驱动
 	"github.com/go-xorm/xorm"
 	"github.com/pelletier/go-toml"
-	"ielpm.cn/projectweb/src/app/config"
-	"ielpm.cn/projectweb/src/app/config/diserver"
+	"xxx.com/projectweb/src/app/config"
+	"xxx.com/projectweb/src/app/config/diserver"
 )
 
 var (
