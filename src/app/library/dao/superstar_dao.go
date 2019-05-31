@@ -6,7 +6,7 @@ import (
 	"log"
 
 	"github.com/go-xorm/xorm"
-	"xxx.com/projectweb/src/app/models"
+	"project-web/src/app/models"
 )
 
 type ProjectwebDao struct {

@@ -13,11 +13,11 @@ import (
 
 	"github.com/kataras/iris/mvc"
 
-	"xxx.com/projectweb/src/app/bootstrap/service"
-	"xxx.com/projectweb/src/app/config"
-	"xxx.com/projectweb/src/app/config/diserver"
-	"xxx.com/projectweb/src/app/library/datasource"
-	"xxx.com/projectweb/src/app/models"
+	"project-web/src/app/bootstrap/diserver"
+	"project-web/src/app/bootstrap/service"
+	"project-web/src/app/library/datasource"
+	"project-web/src/app/library/helper"
+	"project-web/src/app/models"
 )
 
 // IndexController index controller
@@ -31,7 +31,7 @@ const (
 
 // 访问API数据
 func httpClient(url string) {
-
+	url = "http://localhost:8081/api"
 	client := &http.Client{}
 	request, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -44,18 +44,19 @@ func httpClient(url string) {
 	println(response.StatusCode)
 }
 
-// Get url: /
-func (c *IndexController) Get() mvc.Result {
-	httpClient("http://localhost:8081/api")
-
-	Service := service.NewprojectapiService()
-	datalist := Service.GetAll()
-
+//  使用DI 中的数据
+func useContainer() {
 	// 测试外部文件 获取 config 数据
 	container := diserver.GetDI().Container
-	container.Invoke(func(config *config.Config) {
-		println("测试外部文件 获取 config 数据", config.New().Get("database.dirver").(string))
+	container.Invoke(func(helper *helper.Helper) {
+		println("测试外部文件 获取 config 数据", helper.NewConfig().Get("database.dirver").(string))
 	})
+}
+
+// Get url: /
+func (c *IndexController) Get() mvc.Result {
+	Service := service.NewprojectapiService()
+	datalist := Service.GetAll()
 
 	return mvc.View{
 		Name: "index" + filefix,

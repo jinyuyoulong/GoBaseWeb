@@ -1,22 +1,29 @@
 package route
 
 import (
+	"project-web/src/app/controller"
+
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/mvc"
-	"xxx.com/projectweb/src/app/controller"
 )
 
-// Configure registers the necessary routes to the app.
-func Configure(a *iris.Application) {
+// SetRoute 配置路由
+func SetRoute(route *iris.Application) {
+	IndexRoute(route)
+	AdminRoute(route)
+}
+
+// IndexRoute 配置index route
+func IndexRoute(route *iris.Application) {
 	indexC := new(controller.IndexController)
-	index := mvc.New(a.Party("/"))
+	index := mvc.New(route.Party("/"))
 	index.Handle(indexC)
 
-	admin := mvc.New(a.Party("/admin"))
-	admin.Handle(new(controller.AdminController))
+	route.Get("/setroute", indexC.GetIndexHandler)
+}
 
-	// -------------------------------------------------------
-	a.Get("/setroute", indexC.GetIndexHandler)
-	// a.Get("/follower/{id:long}", indexC.GetFollowerHandler)
-	// b.Get("/like/{id:long}", GetLikeHandler)
+// AdminRoute admin route
+func AdminRoute(route *iris.Application) {
+	admin := mvc.New(route.Party("/admin"))
+	admin.Handle(new(controller.AdminController))
 }

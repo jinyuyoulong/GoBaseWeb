@@ -1,15 +1,14 @@
-module xxx.com/projectweb
+module project-web
 
 go 1.12
 
 replace (
 	golang.org/x/crypto@v0.0.0-20180820150726-614d502a4dac => github.com/golang/crypto v0.0.0-20190313024323-a1f597ede03a
 	golang.org/x/lint@v0.0.0 => github.com/golang/lint v0.0.0-20190313153728-d0100b6bd8b3
+	golang.org/x/net v0.0.0 => github.com/golang/net v0.0.0-20190313220215-9f648a60d977
 	golang.org/x/sys@v0.3.0 => github.com/golang/sys v0.3.0
 	golang.org/x/tools@v0.0.0 => github.com/golang/tools v0.0.0-20190315214010-f0bfdbff1f9c
 )
-
-replace golang.org/x/net v0.0.0 => github.com/golang/net v0.0.0-20190313220215-9f648a60d977
 
 require (
 	cloud.google.com/go v0.37.4 // indirect

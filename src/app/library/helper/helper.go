@@ -1,21 +1,22 @@
-package config
+package helper
 
 import (
 	"fmt"
 
 	"github.com/pelletier/go-toml"
-	"xxx.com/projectweb/src/app/library/helper"
 )
 
-type Config struct{}
+// Helper 工具类
+type Helper struct{}
 
-func NewConfig() *Config {
-	return &Config{}
+// NewHelper 初始化类
+func NewHelper() *Helper {
+	return &Helper{}
 }
 
-// New 初始化toml配置服务
-func (c *Config) New() *toml.Tree {
-	rootPath := new(helper.Helper).GetRootDirectory()
+// NewConfig 初始化toml配置服务
+func (h *Helper) NewConfig() *toml.Tree {
+	rootPath := new(Helper).GetRootDirectory()
 	configPath := rootPath + "/config/config.toml"
 
 	// configPath := "../config/config.toml"

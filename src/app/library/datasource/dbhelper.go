@@ -7,11 +7,12 @@ import (
 	"log"
 	"sync"
 
+	"project-web/src/app/bootstrap/diserver"
+	"project-web/src/app/library/helper"
+
 	_ "github.com/go-sql-driver/mysql" // 使用MySQL的隐式驱动
 	"github.com/go-xorm/xorm"
 	"github.com/pelletier/go-toml"
-	"xxx.com/projectweb/src/app/config"
-	"xxx.com/projectweb/src/app/config/diserver"
 )
 
 var (
@@ -37,8 +38,8 @@ func InstanceMaster() *xorm.Engine {
 
 	container := diserver.GetDI().Container
 	var tomlC *toml.Tree
-	container.Invoke(func(config *config.Config) {
-		tomlC = config.New()
+	container.Invoke(func(helper *helper.Helper) {
+		tomlC = helper.NewConfig()
 	})
 
 	//  读取配置文件的数据

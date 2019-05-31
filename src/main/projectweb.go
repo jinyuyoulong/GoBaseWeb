@@ -1,16 +1,17 @@
 package main
 
 import (
+	"project-web/src/app/bootstrap/diserver"
+	"project-web/src/app/bootstrap/route"
+	"project-web/src/app/config"
+
 	"github.com/kataras/iris"
-	"xxx.com/projectweb/src/app/bootstrap/route"
-	"xxx.com/projectweb/src/app/config"
-	"xxx.com/projectweb/src/app/config/diserver"
 )
 
 func main() {
 	app := iris.New()
 	diserver.NewServices(app)
-	route.Configure(app)
+	route.SetRoute(app)
 	port := new(config.Config).New().Get("app.port").(string)
 	app.Run(iris.Addr(port))
 }

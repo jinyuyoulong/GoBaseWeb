@@ -1,23 +1,16 @@
 package diserver
 
-// 包 bootstrap 负责都被标记为节拍请求或响应（即回复请求，但不会无限循环）。随机探测并线性扫描本地网络（单个接口）以用于其他正在运行的实例。
-
-// 在每个扫描周期中，都会检查所有已配置的UDP端口（以防止因配置空间过大而导致速度下降）。
-
-// UDP上的心跳，每一个都被标记为节拍请求或响应（即回复请求，但不会无限循环）。
-
 import (
 	"errors"
 	"sync"
 
-	"xxx.com/projectweb/src/app/library/helper"
+	"project-web/src/app/library/helper"
 
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/sessions"
 	"github.com/kataras/iris/view"
 	"go.uber.org/dig"
-	"xxx.com/projectweb/src/app/config"
 )
 
 // DIserver is high-level compoment of this project
@@ -56,16 +49,9 @@ func GetDI() *DIserver {
 func BuildContainer(a *iris.Application) {
 	container := NewDI(a).Container
 
-	container.Provide(config.NewConfig)
-
+	container.Provide(helper.NewHelper)
 	container.Provide(engineFunc) // 注入
-
-	var appName string
-	container.Invoke(func(config *config.Config) {
-		appName = config.New().Get("app.name").(string)
-	})
 	container.Provide(setViewError)
-
 }
 
 func engineFunc() *view.HTMLEngine {
@@ -81,8 +67,8 @@ func engineFunc() *view.HTMLEngine {
 func setViewError(ctx iris.Context) {
 	container := GetDI().Container
 	var appName string
-	container.Invoke(func(config *config.Config) {
-		appName = config.New().Get("app.name").(string)
+	container.Invoke(func(helper *helper.Helper) {
+		appName = helper.NewConfig().Get("app.name").(string)
 	})
 	err := iris.Map{
 		"app":     appName,

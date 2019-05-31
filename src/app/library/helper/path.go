@@ -8,9 +8,7 @@ import (
 	"strings"
 )
 
-type Helper struct{}
-
-// 返回程序开始执行(命令执行所在目录，比如 shall 执行所在的目录) 所在目录的上一级目录
+// GetRootDirectory 返回程序开始执行(命令执行所在目录，比如 shall 执行所在的目录) 所在目录的上一级目录
 // 例：/Users/xxx/dev/go/projectweb ps.execute 文件在 projectweb/bin 目录下
 func (h *Helper) GetRootDirectory() string {
 	wd, err := os.Getwd()
@@ -20,7 +18,7 @@ func (h *Helper) GetRootDirectory() string {
 	return path.Dir(wd)
 }
 
-// 返回的是可执行文件所在的目录
+// GetCurrentDirectory 返回的是可执行文件所在的目录
 func (h *Helper) GetCurrentDirectory() string {
 	args0 := os.Args[0]
 	argsDir := filepath.Dir(args0)
