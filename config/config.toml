@@ -1,9 +1,7 @@
 [app]
-  # app 名称
-  name = "projectweb database"
+  #app名称
+  name = "project-web"
   url = "http://localhost"
-  #文档地址
-  doc = "./doc"
   port = ":8080"
   debug = false
 
@@ -11,15 +9,11 @@
   dirver = "mysql"
 
 [mysql]
-  databaseName = "superstar"
-  databaseUsername = "root"
-  databasePassword = "333"
-  databaseHost = "127.0.0.1"
-  databasePort = "3306"
+  dbname = "@tcp(127.0.0.1:3306)/dbname?charset=utf8"
+  username = "root"
+  password = "password"
 
-[test]
-  LoginUserName = "admin"
-  LoginPassword = "password"
-
-[path]
-  logPath = "./log"
+[website]
+  static_uri = "/static"
+  site_title = "后台管理"
+  copy_right = "<small>&copy;2019</small>"
