@@ -30,7 +30,7 @@ require (
 	github.com/go-sql-driver/mysql v1.4.1
 	github.com/go-xorm/xorm v0.7.1
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
-	github.com/gorilla/securecookie v1.1.1
+	github.com/gorilla/securecookie v1.1.1 // indirect
 	github.com/gorilla/websocket v1.4.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.0.0
 	github.com/imkira/go-interpol v1.1.0 // indirect
@@ -63,7 +63,6 @@ require (
 	github.com/ryanuber/columnize v2.1.0+incompatible // indirect
 	github.com/shurcooL/sanitized_anchor_name v1.0.0 // indirect
 	github.com/smartystreets/goconvey v0.0.0-20190330032615-68dc04aab96a // indirect
-	github.com/stretchr/testify v1.3.0
 	github.com/tgulacsi/go v0.4.7
 	github.com/tpng/gopkgs v0.0.0-20180428091733-81e90e22e204 // indirect
 	github.com/uber/jaeger-client-go v2.16.0+incompatible
