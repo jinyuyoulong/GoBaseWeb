@@ -3,9 +3,14 @@
 package controller
 
 import (
+	"io"
 	"log"
+	"net/http"
+	"os"
 
 	"github.com/kataras/iris"
+	// "github.com/kataras/iris/cache/client"
+
 	"github.com/kataras/iris/mvc"
 
 	"xxx.com/projectweb/src/app/bootstrap/service"
@@ -24,8 +29,24 @@ const (
 	commonTitle string = "测试资料库"
 )
 
+// 访问API数据
+func httpClient(url string) {
+
+	client := &http.Client{}
+	request, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		panic(err)
+	}
+	response, _ := client.Do(request)
+
+	stdout := os.Stdout
+	_, err = io.Copy(stdout, response.Body) // 输出打印
+	println(response.StatusCode)
+}
+
 // Get url: /
 func (c *IndexController) Get() mvc.Result {
+	httpClient("http://localhost:8081/api")
 
 	Service := service.NewprojectapiService()
 	datalist := Service.GetAll()
