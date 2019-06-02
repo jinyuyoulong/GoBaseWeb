@@ -3,6 +3,7 @@ package controller
 import (
 	"log"
 	"time"
+	"unsafe"
 
 	"project-web/src/models"
 
@@ -38,6 +39,9 @@ func (c *AdminController) Get() mvc.Result {
 // GetEdit 编辑
 //uri: /admin/edit
 func (c *AdminController) GetEdit() mvc.Result {
+	var a struct{}
+	println(unsafe.Sizeof(a))
+
 	starinfo := models.CreateStrInfo()
 	id, err := c.Ctx.URLParamInt("id")
 	var data *models.StarInfo

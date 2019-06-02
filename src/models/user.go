@@ -11,9 +11,14 @@ type User struct {
 	SysStatus int    `xorm:"not null comment('数据状态') TINYINT(1)"`
 }
 
+var signleUser User
+
 func CreateUser() User {
 	Initialize()
-	return User{}
+	if (User{}) != signleUser {
+		signleUser = User{}
+	}
+	return signleUser
 }
 
 func (User) TableName() string {

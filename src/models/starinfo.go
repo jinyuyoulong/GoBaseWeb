@@ -1,6 +1,8 @@
 package models
 
-import "log"
+import (
+	"log"
+)
 
 // # 数据库建表遵循 全小写原则 xorm 映射--> NameZh:name_zh
 type StarInfo struct {
@@ -22,9 +24,16 @@ type StarInfo struct {
 	SysUpdated   int    `xorm:"not null default 0 comment('最后修改时间') INT(10)" form:"-"`
 }
 
+var signleStarInfo StarInfo
+
+// CreateStrInfo 创建StarInfo 用于外面调用
 func CreateStrInfo() StarInfo {
 	Initialize()
-	return StarInfo{}
+
+	if (StarInfo{}) != signleStarInfo { // 只创建一个实例
+		signleStarInfo = StarInfo{}
+	}
+	return signleStarInfo
 }
 
 // TableName 表名重命名，有这个方法，自动匹配
