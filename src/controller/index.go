@@ -69,17 +69,17 @@ func (c *IndexController) GetBy(id int) mvc.Result {
 }
 
 // GetIndexHandler url: /setroute
-func (c *IndexController) GetIndexHandler(ctx iris.Context) {
-	ctx.Writef("Hello from method: %s and path: %s", ctx.Method(), ctx.Path())
+func (c *IndexController) GetIndexHandler(context iris.Context) {
+	context.Writef("Hello from method: %s and path: %s", context.Method(), context.Path())
 }
 
 // GetSet /set set session in redis
-func (c *IndexController) GetSet(ctx iris.Context){
-	session.SessionSet(ctx,"name","iris")
+func (c *IndexController) GetSet(context iris.Context){
+	session.SessionSet(context,"name","iris")
 }
 
 // GetSession /session 获取session
-func (c *IndexController)GetSession(ctx iris.Context){
-	name := session.SessionGet(ctx,"name")
-	ctx.Writef("The name on the /set was: %s", name)
+func (c *IndexController)GetSession(context iris.Context){
+	name := session.SessionGet(context,"name")
+	context.Writef("The name on the /set was: %s", name)
 }
