@@ -3,6 +3,7 @@ package main
 import (
 	"project-web/src/bootstrap/route"
 	"project-web/src/bootstrap/service"
+	"project-web/src/library/session"
 
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/view"
@@ -31,6 +32,8 @@ func setApplication(app *iris.Application) {
 	container.Invoke(func(viewEngine *view.HTMLEngine) {
 		app.RegisterView(viewEngine)
 	})
-
+	session.SetSessionWithRedis(app)
 	app.Run(iris.Addr(port))
+
+	
 }

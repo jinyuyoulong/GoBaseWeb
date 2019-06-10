@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 	"log"
+	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/go-xorm/xorm"
@@ -10,6 +11,9 @@ import (
 	"github.com/kataras/iris/view"
 	"github.com/pelletier/go-toml"
 	"go.uber.org/dig"
+	"github.com/kataras/iris/sessions"
+	"github.com/kataras/iris/sessions/sessiondb/redis"
+	"github.com/kataras/iris/sessions/sessiondb/redis/service"
 )
 
 type Di struct {
@@ -65,6 +69,27 @@ func db() *xorm.Engine {
 	return engine
 }
 
+func createSessions() *sessions.Sessions{
+	db := redis.New(service.Config{
+		Network:     "tcp",
+		Addr:        "127.0.0.1:6379",
+		Password:    "",
+		Database:    "",
+		MaxIdle:     0,
+		MaxActive:   10,
+		IdleTimeout: service.DefaultRedisIdleTimeout,
+		Prefix:      ""}) // optionally configure the bridge between your redis server
+
+	// close connection when control+C/cmd+C
+	iris.RegisterOnInterrupt(func() {
+		db.Close()
+	})
+
+	sess := sessions.New(sessions.Config{Cookie: "sessionscookieid", Expires: 45 * time.Minute})
+	sess.UseDatabase(db)
+	return sess
+}
+
 // BuildContainer 容器创建&注入
 func BuildContainer() {
 	container := GetDi().Container
@@ -72,4 +97,5 @@ func BuildContainer() {
 	container.Provide(AppConfig)
 	container.Provide(viewEngine)
 	container.Provide(db)
+	container.Provide(createSessions)
 }

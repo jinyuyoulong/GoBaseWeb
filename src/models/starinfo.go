@@ -36,7 +36,7 @@ func CreateStrInfo() StarInfo {
 	return signleStarInfo
 }
 
-// TableName 表名重命名，有这个方法，自动匹配
+// TableName 表名重命名，有这个方法，自动匹配数据库表
 func (StarInfo) TableName() string {
 	return "star_info"
 }

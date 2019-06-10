@@ -9,9 +9,9 @@
   dirver = "mysql"
 
 [mysql]
-  dbname = "@tcp(127.0.0.1:3306)/dbname?charset=utf8"
+  dbname = "@tcp(127.0.0.1:3306)/superstar?charset=utf8"
   username = "root"
-  password = "password"
+  password = "333"
 
 [website]
   static_uri = "/static"
