@@ -17,7 +17,6 @@ require (
 	github.com/ajg/form v1.5.1 // indirect
 	github.com/aymerick/raymond v2.0.2+incompatible // indirect
 	github.com/eknkc/amber v0.0.0-20171010120322-cdade1c07385 // indirect
-	github.com/etcd-io/bbolt v1.3.3 // indirect
 	github.com/fatih/structs v1.1.0 // indirect
 	github.com/flosch/pongo2 v0.0.0-20181225140029-79872a7b2769 // indirect
 	github.com/gavv/monotime v0.0.0-20171021193802-6f8212e8d10d // indirect

@@ -8,12 +8,12 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/go-xorm/xorm"
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/view"
-	"github.com/pelletier/go-toml"
-	"go.uber.org/dig"
 	"github.com/kataras/iris/sessions"
 	"github.com/kataras/iris/sessions/sessiondb/redis"
 	"github.com/kataras/iris/sessions/sessiondb/redis/service"
+	"github.com/kataras/iris/view"
+	"github.com/pelletier/go-toml"
+	"go.uber.org/dig"
 )
 
 type Di struct {
@@ -69,7 +69,7 @@ func db() *xorm.Engine {
 	return engine
 }
 
-func createSessions() *sessions.Sessions{
+func createSessions() *sessions.Sessions {
 	db := redis.New(service.Config{
 		Network:     "tcp",
 		Addr:        "127.0.0.1:6379",
