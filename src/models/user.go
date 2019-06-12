@@ -1,6 +1,8 @@
 package models
 
-import "log"
+import (
+	"log"
+)
 
 type User struct {
 	Age       int    `xorm:"not null default 0 comment('年龄') TINYINT(1)"`
