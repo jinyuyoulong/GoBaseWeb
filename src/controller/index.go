@@ -3,10 +3,11 @@
 package controller
 
 import (
+	"project-web/src/library/session"
+	"project-web/src/models"
+
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/mvc"
-	"project-web/src/models"
-	"project-web/src/library/session"
 )
 
 // IndexController index controller
@@ -14,10 +15,6 @@ type IndexController struct {
 	Ctx iris.Context
 	Di  iris.Context
 }
-
-const (
-	commonTitle string = "测试资料库"
-)
 
 // 访问API数据
 // func httpClient(url string) {
@@ -74,12 +71,12 @@ func (c *IndexController) GetIndexHandler(context iris.Context) {
 }
 
 // GetSet /set set session in redis
-func (c *IndexController) GetSet(context iris.Context){
-	session.SessionSet(context,"name","iris")
+func (c *IndexController) GetSet(context iris.Context) {
+	session.SessionSet(context, "name", "iris")
 }
 
 // GetSession /session 获取session
-func (c *IndexController)GetSession(context iris.Context){
-	name := session.SessionGet(context,"name")
+func (c *IndexController) GetSession(context iris.Context) {
+	name := session.SessionGet(context, "name")
 	context.Writef("The name on the /set was: %s", name)
 }

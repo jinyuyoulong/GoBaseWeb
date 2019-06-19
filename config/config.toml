@@ -17,3 +17,7 @@
   static_uri = "/static"
   site_title = "后台管理"
   copy_right = "<small>&copy;2019</small>"
+
+[image]
+  basePath = "../uploads"
+  imgPath = "../uploads"

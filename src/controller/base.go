@@ -1,5 +1,9 @@
 package controller
 
+const (
+	commonTitle string = "测试资料库"
+)
+
 type ApiJson struct {
 	Status bool        `json:"status"`
 	Msg    interface{} `json:"msg"`

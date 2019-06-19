@@ -1,0 +1,53 @@
+<h2>多文件上传</h2>
+    <form name="tform" id="tform">
+        <div class="item" style="position: relative;">
+            <div style="background: transparent;">
+                <input id="uploadfile" style="position: relative;" type="file" name="uploadfile" multiple="multiple">
+            </div>
+        </div>
+        <div id="picdiv" style="margin-top:10px;"></div>
+        <!-- <input type="submit" value="上传" /> -->
+    </form>
+    <script>
+        $(document).ready(function () {
+            $("#uploadfile").change(function () {
+                $("#uploadfile").upload('/image/upload2', function (data) {
+                    var urls = data.split('|');
+                    urls.forEach(element => {
+                        if (!!element)
+                            $("#picdiv").html("<img style='height:60px;margin-left:10px;' src='" + element + "'>");
+                    });
+                });
+            });
+        });
+
+        (function ($) {
+                $.fn.extend({
+                    "upload": function (url, callback) {
+                        var that = this;
+                        if (that.val()) {
+                            var formData = new FormData(that.parents("form")[0]);
+                            $.ajax({
+                                async: true,
+                                cache: false,
+                                contentType: false,
+                                processData: false,
+                                type: "POST",
+                                dataType: "text",
+                                url: url,
+                                data: formData,
+                                error: function (e) {
+                                    that.val("");
+                                },
+                                success: function (data) {
+                                    that.val("");
+                                    if (jQuery.isFunction(callback)) {
+                                        callback.call(null, data);
+                                    }
+                                }
+                            });
+                        }
+                    }
+                });
+            })(window.jQuery);
+    </script>

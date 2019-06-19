@@ -11,6 +11,7 @@ import (
 func SetRoute(route *iris.Application) {
 	IndexRoute(route)
 	AdminRoute(route)
+	ImageRout(route)
 }
 
 // IndexRoute 配置index route
@@ -26,4 +27,9 @@ func IndexRoute(route *iris.Application) {
 func AdminRoute(route *iris.Application) {
 	admin := mvc.New(route.Party("/admin"))
 	admin.Handle(new(controller.AdminController))
+}
+
+func ImageRout(route *iris.Application) {
+	imgV := mvc.New(route.Party("/image"))
+	imgV.Handle(new(controller.ImageController))
 }

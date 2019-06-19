@@ -22,6 +22,7 @@ require (
 	github.com/gavv/monotime v0.0.0-20171021193802-6f8212e8d10d // indirect
 	github.com/go-sql-driver/mysql v1.4.1
 	github.com/go-xorm/xorm v0.7.1
+	github.com/gographics/imagick v3.2.0+incompatible
 	github.com/gomodule/redigo v2.0.0+incompatible // indirect
 	github.com/google/go-cmp v0.2.1-0.20190312032427-6f77996f0c42 // indirect
 	github.com/google/go-querystring v1.0.0 // indirect
@@ -66,4 +67,5 @@ require (
 	golang.org/x/sys v0.0.0-20190516110030-61b9204099cb // indirect
 	golang.org/x/text v0.3.2 // indirect
 	google.golang.org/appengine v1.5.0 // indirect
+	gopkg.in/gographics/imagick.v3 v3.2.0 // indirect
 )
