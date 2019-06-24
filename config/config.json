@@ -1,0 +1,43 @@
+{
+  "name" : "project-web",
+  "url" : "http://localhost",
+  "port" : ":8080",
+  "debug" : false,
+    "database":{
+        "mysql":{
+            "dbname" : "@tcp(127.0.0.1:3306)/superstar?charset=utf8",
+            "username" : "root",
+            "password" : "333"
+        }
+    },
+    "website":{
+        "static_uri" : "/static",
+        "site_title" : "后台管理",
+        "copy_right" : "<small>&copy;2019</small>"
+    },
+    "image":{
+            "image_lib": "Imagick",
+            "image_path": "../../app_images/",
+            "image_url": "image/",
+            "image_org": "org",
+            "image_tmp": "tmp",
+            "image_types": [
+                "jpg",
+                "jpeg",
+                "png",
+                "gif"
+            ],
+            "car_images": [
+                "100x100",
+                "200x200"
+            ],
+            "water_mark": "",
+            "image_categroy": {
+                "paths": "/car_logo/org/",
+                "sizes": [
+                    "100x100",
+                    "200x200"
+                ]
+            }
+    }
+}

@@ -19,13 +19,6 @@ import (
 	"github.com/pelletier/go-toml"
 )
 
-func jsonPerse() {
-	//ReadFile函数会读取文件的全部内容，并将结果以[]byte类型返回
-	// data, _ := ioutil.ReadFile("imageConfig.json")
-	//读取的数据为json格式，需要进行解码
-	// _ = json.Unmarshal(data, v)
-}
-
 // ============
 
 func UploadedImage(file multipart.File, fileheader *multipart.FileHeader, category string, isSave bool) bool {

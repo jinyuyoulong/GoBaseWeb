@@ -59,8 +59,8 @@ func (c *ImageController) PostUpload(ctx iris.Context) {
 	service.GetDi().Container.Invoke(func(config *toml.Tree) {
 		configEng = config
 	})
-	category := configEng.Get("image.image_categroy").(*toml.Tree)
-	fmt.Printf("%v %T", category, category)
+	car_logo := configEng.Get("image.image_categroy.car_logo").(*toml.Tree)
+	fmt.Printf("%v %T", car_logo[0].Get("paths").(string), car_logo)
 	// ok := imgmanager.UploadedImage(file, fileHeader, category[0], true)
 
 	// // filePath := imgmanager.CreateImagePath(file, imgPath, fname, "category")

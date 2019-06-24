@@ -1,6 +1,8 @@
 package helper
 
 import (
+	"encoding/json"
+	"io/ioutil"
 	"log"
 	"os"
 	"path"
@@ -22,4 +24,14 @@ func (h *Helper) GetRootDirectory() string {
 		log.Fatal(err)
 	}
 	return path.Dir(wd)
+}
+
+type ConfigObject struct {
+}
+
+func Config(configPath string, object *interface{}) {
+	//ReadFile函数会读取文件的全部内容，并将结果以[]byte类型返回
+	data, _ := ioutil.ReadFile(configPath)
+	//读取的数据为json格式，需要进行解码
+	_ = json.Unmarshal(data, object)
 }
