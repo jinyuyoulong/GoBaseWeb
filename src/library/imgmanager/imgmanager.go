@@ -3,9 +3,12 @@ package imgmanager
 import (
 	"crypto/md5"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
+	"mime/multipart"
+	"os"
+	"path"
+	"regexp"
 	"strings"
 	"time"
 
@@ -16,114 +19,50 @@ import (
 	"github.com/pelletier/go-toml"
 )
 
-// var jsonConfig = "{}"
-type Mimage struct {
-	image_lib      string
-	image_path     string
-	image_url      string
-	image_org      string
-	image_tmp      string
-	image_types    string
-	water_mark     string
-	image_categroy map[string]ImageCategroy
-}
-
-type ImageCategroy struct {
-	paths []string
-	sizes []string
-}
-
-func newImg() {
+func jsonPerse() {
 	//ReadFile函数会读取文件的全部内容，并将结果以[]byte类型返回
-	data, _ := ioutil.ReadFile("imageConfig.json")
-
-	v := Mimage{}
+	// data, _ := ioutil.ReadFile("imageConfig.json")
 	//读取的数据为json格式，需要进行解码
-	_ = json.Unmarshal(data, v)
-
-	fmt.Printf("%v", v)
-
-	// image := map[string]interface{
-
-	// },
-	// }
+	// _ = json.Unmarshal(data, v)
 }
 
 // ============
 
-func UploadedImage(ctx iris.Context, files string, category string, isSave bool) {
+func UploadedImage(file multipart.File, fileheader *multipart.FileHeader, category string, isSave bool) bool {
 
-	imgPath := makeImagePath(files, category)
-	fmt.Println(imgPath)
 	var fileName string
-	fileName = files
-
-	categories := Mimage{}
-	// categories := map[string]int{"jpg": 1, "png": 1, "jpeg": 1, "gif": 1}
-
-	if files == "" {
+	fileName = fileheader.Filename
+	if fileName == "" {
 		fmt.Println("没有要上传的文件")
 	}
+	var basePath string
+	var configEng *toml.Tree
+	service.GetDi().Container.Invoke(func(config *toml.Tree) {
+		configEng = config
+	})
 
-	imageCategory := categories.image_categroy
+	basePath = configEng.Get("image.image_path").(string)
+
+	imageCategory := configEng.Get("image.image_categroy").([]string)
 
 	if len(imageCategory) == 0 {
 		fmt.Println("无效的图片分类")
 	}
 
-	var basePath string
-	service.GetDi().Container.Invoke(func(config *toml.Tree) {
-		basePath = config.Get("image.basePath").(string)
-	})
+	hashname := MakeImageName(fileName)
+	filePath := CreateImagePath(basePath, fileName, category)
+	out, err := os.OpenFile(filePath+"/"+hashname, os.O_WRONLY|os.O_CREATE, 0666)
+	if err != nil {
+		panic(err.Error())
+		return false
+	}
 
-	// savePath = basePath
-	// if !isSave {
-	// 	savePath = savePath + categories.image_tmp + "/"
-	// }
-	// savePath = savePath + categroy + "/" + categories.image_org + "/"
-
-	// Print the real file names and their sizes
-	// var result []map[string]string
-	// key := 0
-	// for _, file := range files {
-
-	// fileType = file->getRealType();
-	// if (empty(fileType)) {
-	//     fileType = file->getType();
-	// }
-	// extendName = this->getExtendName(fileType);
-	// newName = this->makeImageName(file->getName());
-
-	// if (len(imageCategory.paths) == 1) {
-	// 	filePath = makeImagePath(newName, imageCategory.paths[0]);
-	// } else {
-	// 	filePath = makeImagePaths(newName, imageCategory.paths);
-	// }
-
-	// if (! this->createImagePath(filePath)) {
-	//     result[key]["error"] = "保存失败";
-	// }
-	// filePath = filePath . newName . "." . extendName;
-
-	// if (! this->moveImage(file, filePath)) {
-	//     result[key]["error"] = "保存失败";
-	// }
-	// imageUrl = str_replace(basePath, this->config->image->image_url, filePath);
-	// imagePath = str_replace(basePath, "", filePath);
-	// result[key]["file_url"] = imageUrl;
-	// result[key]["file_path"] = imagePath;
-
-	// // TODO get image size
-	// image = this->getImage(filePath);
-	// result[key]["width"] = image->getWidth();
-	// result[key]["height"] = image->getHeight();
-	// key ++;
-	// }
-
-	// // TODO BeanStack is_save = true
-	ctx.Writef("|%s", "/uploads/"+fileName)
-
-	// return result;
+	defer out.Close()
+	_, err = io.Copy(out, file)
+	if err != nil {
+		return false
+	}
+	return true
 }
 
 /**
@@ -145,28 +84,6 @@ func resizeImageByOrg(filePath string) bool {
 func getImagePath(file string) (filePath string) {
 	filePath = ""
 	return filePath
-}
-
-/**
- * 移动临时文件到真正的目录
- * 返回真正目录路径
- *
- * @param string tmpFile
- * @return string
- */
-func moveTmpFileToPath(tmpFile string) string {
-	distFile := ""
-	return distFile
-}
-
-/**
- *
- * @param unknown uploadFile
- * @param unknown distPath
- * @return boolean
- */
-func moveImage(uploadFile, distPath string) (ok bool) {
-	return ok
 }
 
 /**
@@ -225,11 +142,13 @@ func cropImage(width, height uint, offsetX, offsetY int) bool {
  * 保存图片
  *
  * @param unknown file
- * @param number quality = 90 默认
+ * @param number quality = 90 默认画质
  * @return boolean
  */
-func saveImage(file string, quality int) {
+func saveImage(ctx iris.Context, fileName string, quality int) {
+	fmt.Println(fileName)
 
+	ctx.Writef("|%s", "/uploads/"+fileName)
 }
 
 /**
@@ -238,25 +157,21 @@ func saveImage(file string, quality int) {
  * @param unknown imageName
  * @return unknown
  */
-func makeImageName(imageName string) string {
+func MakeImageName(imageName string) (hashName string) {
 
-	// path 结构 org/category/time/hash.jpg
-	// org/category/2019-06-19/8b18e22f914e64a1a933541ed0e97ae0.jpg
-	files := imageName
-	index := strings.LastIndex(files, ".")
+	// 	orginal.jpg
+	index := strings.LastIndex(imageName, ".")
 	if index == -1 {
 		index = 0
 	}
-	laststr := files[index:]
-	substr := files[:index]
 
+	substr := imageName[:index]
+	suffix := imageName[index:]
 	cryptomd5 := md5.New()
 	cryptomd5.Write([]byte(substr))
 	hashNameByte := cryptomd5.Sum(nil)
-	hashName := hex.EncodeToString(hashNameByte)
-	hashNameSub := hashName[len(hashName)-4:]
-
-	return (hashNameSub + "/" + hashName + laststr)
+	hashName = hex.EncodeToString(hashNameByte) // 转成16进制字符串
+	return hashName + suffix
 }
 
 /**
@@ -268,15 +183,7 @@ func makeImageName(imageName string) string {
  */
 func makeImagePath(imageName, categoryPath string) string {
 	var path string
-	path = "org/"
-	path += categoryPath
-
-	now := time.Now().Format("2006-01-02")
-	fmt.Println(now)
-	path = path + "/" + now
-	hashName := makeImageName(imageName)
-
-	path = path + "/" + hashName
+	println("path= ", path)
 	return path
 }
 func makeImagePaths(imageName, pathConfig []string) string {
@@ -291,21 +198,34 @@ func makeImagePaths(imageName, pathConfig []string) string {
  * @param number permission 默认 0755
  * @return boolean|unknown
  */
-func createImagePath(path string, permission int) {
-	// 	var path string
-	// 	path = "org/"
-	// 	path += categoryPath
+func CreateImagePath(basePath, imageName, categoryPath string) string {
+	var path string
+	path = "org/"
+	now := time.Now().Format("2006-01-02")
+	hashName := MakeImageName(imageName)
 
-	// 	now := time.Now().Format("2006-01-02")
-	// 	fmt.Println(now)
-	// 	path = path + "/" + now
-	// 	path = path + "/" + makeImageName(imageName)
-	// 	return path
+	// 取模运算
+	// hashNameByte, _ := hex.DecodeString(hashName)
+	// var modResult []byte
+	// for _, mbyte := range hashNameByte {
+	// 	mod := mbyte % 2
+	// 	modResult = append(modResult, mod)
+	// }
+	// hexMod := hex.EncodeToString(modResult[0:4])
+
+	// 取前两个字符作为 mod 目录
+	hexMod := hashName[:2]
+
+	path = basePath + "/" + categoryPath + "/" + now + "/" + hexMod
+
+	os.MkdirAll(path, 0777)
+
+	return path
 }
 
 /**
  * 根据mime类型获取扩展名
- * @param unknown fileType
+ * @param string fileType
  * @return string
  */
 func getExtendName(fileType string) string {
@@ -315,11 +235,13 @@ func getExtendName(fileType string) string {
 
 /**
  * 根据缩略图路径获得原图路径
- * @param unknown path
+ * @param string path /org/category/2019-12-09/a3/a38b.jpg
  * @return string
  */
-func getImageOrgPath(path string) string {
-	nativePath := ""
+func getImageOrgPath(fpath string) string {
+	subPaths, _ := path.Split(fpath)
+
+	nativePath := subPaths
 	return nativePath
 }
 
@@ -328,16 +250,25 @@ func getImageOrgPath(path string) string {
  * @param unknown path
  * @return string|unknown
  */
-func getImageSizeByPath(path string) string {
-	size := ""
-	return size
+func GetImageSizeByPath(path string) string {
+	println("GetImageSizeByPath")
+	strs := regexp.MustCompile(`/[a-zA-Z0-9]+x[0-9]+/`).FindAllString(path, -1)
+	if len(strs) == 0 {
+		return ""
+	}
+
+	return strs[0]
 }
 
 /**
  * 根据图片路径获得图片分类
  * @param unknown path
  */
-func getImageCategoryByPath(path string) string {
-	category := "jpg"
-	return category
+func GetImageCategoryByPath(path string) string {
+	// /org/category/2019-12-09/a3/a38b.jpg
+	categorys := strings.Split(path, "/")
+	if len(categorys) > 2 {
+		return categorys[2]
+	}
+	return ""
 }
