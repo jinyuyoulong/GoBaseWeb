@@ -24,6 +24,10 @@ type Di struct {
 
 var di *Di
 
+func init() {
+	BuildContainer()
+}
+
 // GetDI get
 func GetDi() *Di {
 	if di == nil {
@@ -37,8 +41,8 @@ func GetDi() *Di {
 var conf *Config
 
 func AppConfig() *Config {
-
 	if conf == nil {
+		conf = new(Config)
 		file := "../config/config.toml"
 		_, err := toml.DecodeFile(file, conf)
 		if err != nil {
@@ -67,11 +71,11 @@ func db() *xorm.Engine {
 	// userName := configTree.Get("username").(string)
 	// password := configTree.Get("password").(string)
 	// dbname := configTree.Get("dbname").(string)
-	driver := tomlC.Database.dirver
+	driver := tomlC.Database.Dirver
 	configTree := tomlC.Mysql
-	userName := configTree.username
-	password := configTree.password
-	dbname := configTree.dbname
+	userName := configTree.Username
+	password := configTree.Password
+	dbname := configTree.Dbname
 	connet := fmt.Sprintf("%s:%s%s", userName, password, dbname)
 	println(connet)
 	engine, err := xorm.NewEngine(driver, connet)

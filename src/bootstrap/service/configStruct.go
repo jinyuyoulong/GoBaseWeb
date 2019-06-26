@@ -3,19 +3,19 @@ package service
 type Config struct {
 	App struct {
 		Name  string
-		Url   string
+		URL   string
 		Port  string
 		Debug bool
 	}
 
 	Database struct {
-		dirver string
+		Dirver string
 	} `toml:"database"`
 
 	Mysql struct {
-		dbname   string
-		username string
-		password string
+		Dbname   string
+		Username string
+		Password string
 	} `toml:"mysql"`
 
 	Website struct {

@@ -20,8 +20,6 @@ func setApplication(app *iris.Application) {
 
 	var port string
 
-	service.BuildContainer()
-
 	di := service.GetDi()
 	container := di.Container
 	container.Invoke(func(config *service.Config) {

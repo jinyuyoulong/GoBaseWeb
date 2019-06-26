@@ -24,7 +24,7 @@
   image_url    = "image/" #// http://static.xxx.com/image/car_photo/150x150/19/sdddddd
   image_org    = 'org' #// 原图路径名
   image_tmp    = "tmp" #// 临时路径名
-  image_types  = "jpg,jpeg,png,gif"
+  image_types  = ["jpg","jpeg","png","gif"]
   water_mark   = ""
   #// 汽车品牌LOGO
   [[image.image_categroy]]
