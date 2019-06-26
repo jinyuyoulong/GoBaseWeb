@@ -6,7 +6,6 @@ import (
 
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/view"
-	"github.com/pelletier/go-toml"
 )
 
 func main() {
@@ -25,13 +24,12 @@ func setApplication(app *iris.Application) {
 
 	di := service.GetDi()
 	container := di.Container
-	container.Invoke(func(config *toml.Tree) {
-		port = config.Get("app.port").(string)
+	container.Invoke(func(config *service.Config) {
+		port = config.App.Port
 	})
 	container.Invoke(func(viewEngine *view.HTMLEngine) {
 		app.RegisterView(viewEngine)
 	})
 	app.Run(iris.Addr(port))
 
-	
 }

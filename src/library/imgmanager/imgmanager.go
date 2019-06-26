@@ -16,7 +16,6 @@ import (
 
 	"github.com/gographics/imagick/imagick"
 	"github.com/kataras/iris"
-	"github.com/pelletier/go-toml"
 )
 
 // ============
@@ -29,18 +28,12 @@ func UploadedImage(file multipart.File, fileheader *multipart.FileHeader, catego
 		fmt.Println("没有要上传的文件")
 	}
 	var basePath string
-	var configEng *toml.Tree
-	service.GetDi().Container.Invoke(func(config *toml.Tree) {
+	var configEng *service.Config
+	service.GetDi().Container.Invoke(func(config *service.Config) {
 		configEng = config
 	})
 
-	basePath = configEng.Get("image.image_path").(string)
-
-	imageCategory := configEng.Get("image.image_categroy").([]string)
-
-	if len(imageCategory) == 0 {
-		fmt.Println("无效的图片分类")
-	}
+	basePath = configEng.Image.ImagePath
 
 	hashname := MakeImageName(fileName)
 	filePath := CreateImagePath(basePath, fileName, category)

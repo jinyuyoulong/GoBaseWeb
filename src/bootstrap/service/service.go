@@ -12,7 +12,9 @@ import (
 	"github.com/kataras/iris/sessions/sessiondb/redis"
 	"github.com/kataras/iris/sessions/sessiondb/redis/service"
 	"github.com/kataras/iris/view"
-	"github.com/pelletier/go-toml"
+
+	// "github.com/pelletier/go-toml"
+	"github.com/BurntSushi/toml"
 	"go.uber.org/dig"
 )
 
@@ -32,13 +34,19 @@ func GetDi() *Di {
 	return di
 }
 
-func AppConfig() *toml.Tree {
-	file := "../config/config.toml"
-	config, err := toml.LoadFile(file)
-	if err != nil {
-		fmt.Println("Toml Error!", err.Error())
+var conf *Config
+
+func AppConfig() *Config {
+
+	if conf == nil {
+		file := "../config/config.toml"
+		_, err := toml.DecodeFile(file, conf)
+		if err != nil {
+			fmt.Println("Toml Error!", err.Error())
+		}
 	}
-	return config
+
+	return conf
 }
 
 func viewEngine() *view.HTMLEngine {
@@ -54,12 +62,16 @@ func viewEngine() *view.HTMLEngine {
 func db() *xorm.Engine {
 	//  读取配置文件的数据
 	tomlC := AppConfig()
-	driver := tomlC.Get("database.dirver").(string)
-	configTree := tomlC.Get(driver).(*toml.Tree)
-	userName := configTree.Get("username").(string)
-	password := configTree.Get("password").(string)
-	dbname := configTree.Get("dbname").(string)
-
+	// driver := tomlC.Get("database.dirver").(string)
+	// configTree := tomlC.Get(driver).(*toml.Tree)
+	// userName := configTree.Get("username").(string)
+	// password := configTree.Get("password").(string)
+	// dbname := configTree.Get("dbname").(string)
+	driver := tomlC.Database.dirver
+	configTree := tomlC.Mysql
+	userName := configTree.username
+	password := configTree.password
+	dbname := configTree.dbname
 	connet := fmt.Sprintf("%s:%s%s", userName, password, dbname)
 	println(connet)
 	engine, err := xorm.NewEngine(driver, connet)
