@@ -26,6 +26,7 @@
   image_tmp    = "tmp" #// 临时路径名
   image_types  = ["jpg","jpeg","png","gif"]
   water_mark   = ""
+  imageCategroies = ["car_logo"]
   #// 汽车品牌LOGO
   [[image.image_categroy]]
     [[image_categroy.car_logo]]

@@ -7,7 +7,7 @@ import (
 	"io"
 	"mime/multipart"
 	"os"
-	"path"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
@@ -18,9 +18,15 @@ import (
 	"github.com/kataras/iris"
 )
 
-// ============
+var config *service.Config
 
-func UploadedImage(file multipart.File, fileheader *multipart.FileHeader, category string, isSave bool) bool {
+func init() {
+	config = GetConfig()
+}
+
+// ============
+//
+func UploadedImage(file multipart.File, fileheader *multipart.FileHeader, category string, isSave bool) string {
 
 	var fileName string
 	fileName = fileheader.Filename
@@ -28,36 +34,80 @@ func UploadedImage(file multipart.File, fileheader *multipart.FileHeader, catego
 		fmt.Println("没有要上传的文件")
 	}
 	var basePath string
-	var configEng *service.Config
-	service.GetDi().Container.Invoke(func(config *service.Config) {
-		configEng = config
-	})
 
-	basePath = configEng.Image.ImagePath
+	basePath = config.Image.ImagePath
 
 	hashname := MakeImageName(fileName)
-	filePath := CreateImagePath(basePath, fileName, category)
-	out, err := os.OpenFile(filePath+"/"+hashname, os.O_WRONLY|os.O_CREATE, 0666)
+
+	// 创建路径
+	fileDictionary := CreateImagePath(basePath, fileName, category)
+	filePath := fileDictionary + "/" + hashname
+	// 打开文件
+	out, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE, 0666)
 	if err != nil {
 		panic(err.Error())
-		return false
+		return ""
 	}
 
 	defer out.Close()
+
+	// 写入文件
 	_, err = io.Copy(out, file)
 	if err != nil {
-		return false
+		fmt.Printf("UploadedImage: %s", err.Error())
+		return ""
 	}
-	return true
+	return filePath
 }
 
 /**
  * 根据原图生成缩略图
  *
- * @param string filePath
+ * @param string filePath 经NGINX过滤后，客户端访问的图片路径
  * @return boolean
  */
-func resizeImageByOrg(filePath string) bool {
+func ResizeImageByOrg(filePath string) bool {
+	orgPath := GetImageOrgPath(filePath) // 替换100x100 获取org path
+	if orgPath == "" {
+		return false
+	}
+	category := GetImageCategoryByPath(orgPath)
+	size := GetImageSizeByPath(filePath)
+	if category == "" || size == "" {
+		return false
+	}
+	// imageCategories := config.Image.ImageCategories
+	// category := imageCategories[0]
+	carLogo := config.Image.ImageCategory.CarLogo
+	ok := false
+	for _, value := range carLogo.Sizes {
+		if value == size {
+			ok = true
+			break
+		}
+	}
+	println("ok ", ok)
+	if !ok {
+		println("图片 file path size 错误")
+		return false
+	}
+
+	//         if (! isset($imageCategroy->$categroy, $imageCategroy->$categroy->sizes) && in_array($size, $imageCategroy->$categroy->sizes)) {
+	//             return false;
+	//         }
+
+	//         $sizes = explode('x', $size);
+	//         if (empty($sizes)) {
+	//             return false;
+	//         }
+
+	//         if (! $this->getImage($orgPath)) {
+	//             return false;
+	//         }
+
+	//         $this->resizeImage($sizes[0], $sizes[1]);
+
+	//         return $this->saveImage($filePath);
 	return true
 }
 
@@ -67,7 +117,7 @@ func resizeImageByOrg(filePath string) bool {
  * @param unknown file
  * @return string
  */
-func getImagePath(file string) (filePath string) {
+func GetImagePath(file string) (filePath string) {
 	filePath = ""
 	return filePath
 }
@@ -78,7 +128,7 @@ func getImagePath(file string) (filePath string) {
  * @param string fileName
  * @return NULL|mixed <NULL, GD, Imagick>
  */
-func getImage(fileName string) *imagick.MagickWand {
+func GetImage(fileName string) *imagick.MagickWand {
 	mw := imagick.NewMagickWand()
 	err := mw.ReadImage("header:")
 
@@ -96,7 +146,7 @@ func getImage(fileName string) *imagick.MagickWand {
  * @param unknown height
  * @return boolean
  */
-func resizeImage(width, height float32) bool {
+func ResizeImage(width, height float32) bool {
 	return false
 }
 
@@ -167,12 +217,12 @@ func MakeImageName(imageName string) (hashName string) {
  * @param unknown pathConfig
  * @return string
  */
-func makeImagePath(imageName, categoryPath string) string {
+func MakeImagePath(imageName, categoryPath string) string {
 	var path string
 	println("path= ", path)
 	return path
 }
-func makeImagePaths(imageName, pathConfig []string) string {
+func MakeImagePaths(imageName, pathConfig []string) string {
 	path := ""
 	return path
 }
@@ -185,25 +235,13 @@ func makeImagePaths(imageName, pathConfig []string) string {
  * @return boolean|unknown
  */
 func CreateImagePath(basePath, imageName, categoryPath string) string {
-	var path string
-	path = "org/"
+	orgPath := config.Image.ImageOrg
 	now := time.Now().Format("2006-01-02")
 	hashName := MakeImageName(imageName)
 
-	// 取模运算
-	// hashNameByte, _ := hex.DecodeString(hashName)
-	// var modResult []byte
-	// for _, mbyte := range hashNameByte {
-	// 	mod := mbyte % 2
-	// 	modResult = append(modResult, mod)
-	// }
-	// hexMod := hex.EncodeToString(modResult[0:4])
-
 	// 取前两个字符作为 mod 目录
 	hexMod := hashName[:2]
-
-	path = basePath + "/" + categoryPath + "/" + now + "/" + hexMod
-
+	path := filepath.Join(basePath, categoryPath, orgPath, now, hexMod)
 	os.MkdirAll(path, 0777)
 
 	return path
@@ -221,23 +259,30 @@ func getExtendName(fileType string) string {
 
 /**
  * 根据缩略图路径获得原图路径
- * @param string path /org/category/2019-12-09/a3/a38b.jpg
+ * @param string path ./category/200x200/2019-06-24/19/19a34.jpg
  * @return string
  */
-func getImageOrgPath(fpath string) string {
-	subPaths, _ := path.Split(fpath)
+func GetImageOrgPath(fpath string) string {
+	if fpath == "" {
+		return ""
+	}
 
-	nativePath := subPaths
-	return nativePath
+	imageOrg := config.Image.ImageOrg
+	imageSize := GetImageSizeByPath(fpath)
+
+	// 返回将s中前n个不重叠old子串都替换为new的新字符串，如果n<0会替换所有old子串。
+	strings.Replace(fpath, imageSize, imageOrg, 1)
+	// path.Split(fpath)
+	return fpath
 }
 
 /**
  * 根据缩略图路径获得缩略图规格
- * @param unknown path
+ * @param unknown path 200x200/2019-06-24/19/19a34.jpg
  * @return string|unknown
  */
 func GetImageSizeByPath(path string) string {
-	println("GetImageSizeByPath")
+	// over
 	strs := regexp.MustCompile(`/[a-zA-Z0-9]+x[0-9]+/`).FindAllString(path, -1)
 	if len(strs) == 0 {
 		return ""
@@ -248,13 +293,21 @@ func GetImageSizeByPath(path string) string {
 
 /**
  * 根据图片路径获得图片分类
- * @param unknown path
+ * @param string path http://static.xxx.com/image/category/200x200/2019-06-24/19/19a34.jpg
  */
 func GetImageCategoryByPath(path string) string {
-	// /org/category/2019-12-09/a3/a38b.jpg
+	// over
 	categorys := strings.Split(path, "/")
 	if len(categorys) > 2 {
 		return categorys[2]
 	}
 	return ""
+}
+
+func GetConfig() *service.Config {
+	var config *service.Config
+	service.GetDi().Container.Invoke(func(conf *service.Config) {
+		config = conf
+	})
+	return config
 }

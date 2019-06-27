@@ -28,7 +28,7 @@ func init() {
 	BuildContainer()
 }
 
-// GetDI get
+// GetDi get
 func GetDi() *Di {
 	if di == nil {
 		di = &Di{
@@ -66,11 +66,6 @@ func viewEngine() *view.HTMLEngine {
 func db() *xorm.Engine {
 	//  读取配置文件的数据
 	tomlC := AppConfig()
-	// driver := tomlC.Get("database.dirver").(string)
-	// configTree := tomlC.Get(driver).(*toml.Tree)
-	// userName := configTree.Get("username").(string)
-	// password := configTree.Get("password").(string)
-	// dbname := configTree.Get("dbname").(string)
 	driver := tomlC.Database.Dirver
 	configTree := tomlC.Mysql
 	userName := configTree.Username

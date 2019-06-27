@@ -30,43 +30,34 @@ func (c *ImageController) GetUpload(ctx iris.Context) mvc.Result {
 }
 
 func (c *ImageController) PostUpload(ctx iris.Context) {
-	// 处理上传请求，并保存文件到目录
-	// app.Post("/upload", iris.LimitRequestBodySize(maxSize+1<<20), func(ctx iris.Context) {
-	_, _, err := ctx.FormFile("uploadfile")
+
+	file, fileHeader, err := ctx.FormFile("uploadfile")
 
 	if err != nil {
 		ctx.StatusCode(iris.StatusInternalServerError)
 		ctx.HTML("Error while uploading: <b>" + err.Error() + "</b>")
 		return
 	}
-	// defer file.Close()
+	defer file.Close()
 
-	// fname := fileHeader.Filename
-	// hashname := imgmanager.MakeImageName(fname)
+	var conf *service.Config
+	service.GetDi().Container.Invoke(func(config *service.Config) {
+		conf = config
+	})
 
-	// ok := imgmanager.UploadedImage(file, fileHeader, category[0], true)
+	filePath := imgmanager.UploadedImage(file, fileHeader, conf.Image.ImageCategroies[0], true)
 
-	// // filePath := imgmanager.CreateImagePath(file, imgPath, fname, "category")
-
-	// // out, err := os.OpenFile(filePath+"/"+hashname, os.O_WRONLY|os.O_CREATE, 0666)
-	// // if err != nil {
-	// // 	ctx.StatusCode(iris.StatusInternalServerError)
-	// // 	ctx.HTML("Error while uploading: <b>" + err.Error() + "</b>")
-	// // 	return
-	// // }
-
-	// // defer out.Close()
-	// // io.Copy(out, file)
-	// var msg string
-	// if ok {
-	// 	msg = "图片上传成功"
-	// } else {
-	// 	msg = "图片上传失败"
-	// }
-	// ctx.JSON(iris.Map{
-	// 	"status":  true,
-	// 	"message": msg,
-	// })
+	var msg string
+	if filePath != "" {
+		msg = "图片上传成功"
+	} else {
+		msg = "图片上传失败"
+	}
+	println(filePath)
+	ctx.JSON(iris.Map{
+		"status":  true,
+		"message": msg,
+	})
 }
 func (c *ImageController) GetUpload2(ctx iris.Context) mvc.Result {
 	fmt.Println("get Upload2")

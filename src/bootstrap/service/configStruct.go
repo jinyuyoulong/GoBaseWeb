@@ -25,13 +25,14 @@ type Config struct {
 	}
 
 	Image struct {
-		ImageLib   string   `toml:"image_lib"`
-		ImagePath  string   `toml:"image_path"`
-		ImageURL   string   `toml:"image_ur"`
-		ImageOrg   string   `toml:"image_org"`
-		ImageTmp   string   `toml:"image_tmp"`
-		ImageTypes []string `toml:"image_types"`
-		WaterMark  string   `toml:"water_mark"`
+		ImageLib        string   `toml:"image_lib"`
+		ImagePath       string   `toml:"image_path"`
+		ImageURL        string   `toml:"image_ur"`
+		ImageOrg        string   `toml:"image_org"`
+		ImageTmp        string   `toml:"image_tmp"`
+		ImageTypes      []string `toml:"image_types"`
+		WaterMark       string   `toml:"water_mark"`
+		ImageCategroies []string
 		// ImageCategory imageCategory `toml:"imageCategory"`
 		ImageCategory struct {
 			CarLogo struct {
