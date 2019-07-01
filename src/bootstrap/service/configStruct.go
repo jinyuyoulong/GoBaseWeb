@@ -39,9 +39,6 @@ type Config struct {
 				Paths string   `toml:"paths"`
 				Sizes []string `toml:"sizes"`
 			} `toml:"carLogo"`
-			ImgLogo struct {
-				Paths string `toml:"paths"`
-			} `toml:"imgLogo"`
 		} `toml:"imageCategory"`
 	}
 }

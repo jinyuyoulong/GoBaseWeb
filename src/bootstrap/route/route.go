@@ -31,5 +31,9 @@ func AdminRoute(route *iris.Application) {
 
 func ImageRout(route *iris.Application) {
 	imgV := mvc.New(route.Party("/image"))
-	imgV.Handle(new(controller.ImageController))
+	imgC := new(controller.ImageController)
+	imgV.Handle(imgC)
+	// url := "/carlogo/100x100/8b/2019-07-01/8b18e22f914e64a1a933541ed0e97ae0.jpg"
+	// route.Get(url, imgC.GetCreateResizeOrgImage)
+	// route.Get("image/create/")
 }

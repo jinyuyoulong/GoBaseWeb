@@ -8,14 +8,15 @@ import (
 	"mime/multipart"
 	"os"
 	"path/filepath"
+	"reflect"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
 	"project-web/src/bootstrap/service"
 
 	"github.com/gographics/imagick/imagick"
-	"github.com/kataras/iris"
 )
 
 var config *service.Config
@@ -33,80 +34,85 @@ func UploadedImage(file multipart.File, fileheader *multipart.FileHeader, catego
 	if fileName == "" {
 		fmt.Println("没有要上传的文件")
 	}
-	var basePath string
-
-	basePath = config.Image.ImagePath
 
 	hashname := MakeImageName(fileName)
 
 	// 创建路径
-	fileDictionary := CreateImagePath(basePath, fileName, category)
-	filePath := fileDictionary + "/" + hashname
-	// 打开文件
-	out, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE, 0666)
-	if err != nil {
-		panic(err.Error())
-		return ""
-	}
-
-	defer out.Close()
-
-	// 写入文件
-	_, err = io.Copy(out, file)
-	if err != nil {
-		fmt.Printf("UploadedImage: %s", err.Error())
-		return ""
-	}
+	fileDictionary := MakeImagePath(fileName)
+	CreateImagePath(fileDictionary, 0)
+	filePath := filepath.Join(fileDictionary, hashname) //fileDictionary + "/" + hashname
+	fmt.Println("filePath ", filePath)
+	SaveImage(filePath, file, 0)
 	return filePath
 }
 
 /**
- * 根据原图生成缩略图
- *
- * @param string filePath 经NGINX过滤后，客户端访问的图片路径
- * @return boolean
- */
-func ResizeImageByOrg(filePath string) bool {
-	orgPath := GetImageOrgPath(filePath) // 替换100x100 获取org path
-	if orgPath == "" {
-		return false
-	}
-	category := GetImageCategoryByPath(orgPath)
-	size := GetImageSizeByPath(filePath)
+* 根据原图生成缩略图
+*
+* @param string scalaPath 经NGINX过滤后，客户端访问的图片路径
+/carlogo/100x100/8b/2019-06-28/8b18.jpg
+* @return boolean
+*/
+func ResizeImageByOrg(scalaPath string) bool {
+	println("scalaPath: ", scalaPath)
+	category := GetImageCategoryByPath(scalaPath)
+	println("cate: ", category)
+	size := GetImageSizeByPath(scalaPath)
+	println("size: ", size)
 	if category == "" || size == "" {
 		return false
 	}
-	// imageCategories := config.Image.ImageCategories
-	// category := imageCategories[0]
+
+	oType := reflect.TypeOf(config.Image.ImageCategory)
+	var isHaveCate bool
+	var index int
+	for i := 0; i < oType.NumField(); i++ {
+		f := oType.Field(i)
+		if f.Name == category {
+			isHaveCate = true
+			index = i
+		}
+	}
+
+	confCategory := config.Image.ImageCategroies[index]
+
+	if confCategory != category && !isHaveCate {
+		fmt.Errorf("图片没有当前分类")
+	}
+
 	carLogo := config.Image.ImageCategory.CarLogo
-	ok := false
+
+	// 判断size是否是受支持的，在配置文件中
+	var ok bool
 	for _, value := range carLogo.Sizes {
+		fmt.Println(value, size)
 		if value == size {
 			ok = true
+			fmt.Println("请求图片规格正确")
 			break
 		}
 	}
-	println("ok ", ok)
 	if !ok {
-		println("图片 file path size 错误")
+		fmt.Println("请求图片规格错误")
 		return false
 	}
+	sizes := strings.Split(size, "x")
+	width, _ := strconv.Atoi(sizes[0])
+	height, _ := strconv.Atoi(sizes[1])
+	fmt.Printf("width %v,height %v\n", width, height)
 
-	//         if (! isset($imageCategroy->$categroy, $imageCategroy->$categroy->sizes) && in_array($size, $imageCategroy->$categroy->sizes)) {
-	//             return false;
-	//         }
+	orgPath := GetImageOrgPath(scalaPath) // 根据缩略图path 获取org path
+	if orgPath == "" {
+		return false
+	}
+	// get image resize save
+	image := GetImage(orgPath, scalaPath, uint(width), uint(height))
 
-	//         $sizes = explode('x', $size);
-	//         if (empty($sizes)) {
-	//             return false;
-	//         }
+	if image != nil {
+		fmt.Errorf("没有源图片")
+	}
 
-	//         if (! $this->getImage($orgPath)) {
-	//             return false;
-	//         }
-
-	//         $this->resizeImage($sizes[0], $sizes[1]);
-
+	// scalaImage := ResizeImage(width, height)
 	//         return $this->saveImage($filePath);
 	return true
 }
@@ -114,28 +120,69 @@ func ResizeImageByOrg(filePath string) bool {
 /**
  * 根据URI获得图片完整路径
  *
- * @param unknown file
+ * @param  URI // https://static.xx.com/app_images/car/org/mod/date/hax.png
  * @return string
  */
-func GetImagePath(file string) (filePath string) {
-	filePath = ""
-	return filePath
+func GetImagePath(rPath string) string {
+	return rPath
 }
 
 /**
  * 获得图片对象通过文件路径
  *
- * @param string fileName
+ * @param string fileName /car/org/mod/date/hax.png ==> ../app_images/car/org/mod/date/hax.png
  * @return NULL|mixed <NULL, GD, Imagick>
  */
-func GetImage(fileName string) *imagick.MagickWand {
+func GetImage(orgPath, scalaPath string, swidth, sheight uint) *imagick.MagickWand {
+	orgPath = filepath.Join(config.Image.ImagePath, orgPath)
+	// realPath := strings.Replace(orgPath)
+
+	imagick.Initialize()
+	// Schedule cleanup
+	defer imagick.Terminate()
+	var err error
+
 	mw := imagick.NewMagickWand()
-	err := mw.ReadImage("header:")
+
+	err = mw.ReadImage(orgPath)
+	if err != nil {
+		fmt.Println("ReadImage: ", err)
+		return nil
+	}
+
+	image := mw.GetImage()
+
+	// Get original logo size
+	width := mw.GetImageWidth()
+	height := mw.GetImageHeight()
+	println("imagic get width and height: ", width, " ", height)
+	// ----------
+	//  压缩image
+	width = swidth
+	height = sheight
+
+	err = mw.ResizeImage(width, height, imagick.FILTER_LANCZOS)
 
 	if err != nil {
-		panic(err)
+		fmt.Printf("resize image fild! %v", err.Error())
 	}
-	image := mw.GetImage()
+	// ---------
+	scalaPath = filepath.Join(config.Image.ImagePath, scalaPath)
+	scalaPaths := strings.Split(scalaPath, "/")
+	scalaPath = ""
+	fileName := scalaPaths[len(scalaPaths)-1]
+	for i := 0; i < len(scalaPaths)-1; i++ {
+		subPath := scalaPaths[i]
+		scalaPath += subPath + "/"
+	}
+	println("scalaPath remove jpg: ", scalaPath)
+	CreateImagePath(scalaPath, 0)
+	scalaFile := scalaPath + fileName
+	//导出图片
+	err = mw.WriteImage(scalaFile)
+	if err != nil {
+		fmt.Printf("保存图片失败 %v", err.Error())
+	}
 	return image
 }
 
@@ -146,9 +193,10 @@ func GetImage(fileName string) *imagick.MagickWand {
  * @param unknown height
  * @return boolean
  */
-func ResizeImage(width, height float32) bool {
-	return false
-}
+// func ResizeImage(image *imagick.MagickWand, width, height uint) bool {
+
+// 	return false
+// }
 
 /**
  * 剪切图片
@@ -167,7 +215,7 @@ func cropImage(width, height uint, offsetX, offsetY int) bool {
 	}
 	err = mw.CropImage(width, height, offsetX, offsetY)
 	if err != nil {
-		fmt.Println(err.Error)
+		fmt.Println("cropImage: ", err.Error)
 		return false
 	}
 
@@ -181,10 +229,27 @@ func cropImage(width, height uint, offsetX, offsetY int) bool {
  * @param number quality = 90 默认画质
  * @return boolean
  */
-func saveImage(ctx iris.Context, fileName string, quality int) {
-	fmt.Println(fileName)
+func SaveImage(filePath string, file multipart.File, permission os.FileMode) bool {
+	// 打开文件
+	//  default 0666
+	if permission == 0 {
+		permission = 0666
+	}
+	out, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE, permission)
+	if err != nil {
+		panic(err.Error())
+		return false
+	}
 
-	ctx.Writef("|%s", "/uploads/"+fileName)
+	defer out.Close()
+
+	// 写入文件
+	_, err = io.Copy(out, file)
+	if err != nil {
+		fmt.Printf("SaveImage: %s", err.Error())
+		return false
+	}
+	return true
 }
 
 /**
@@ -217,13 +282,18 @@ func MakeImageName(imageName string) (hashName string) {
  * @param unknown pathConfig
  * @return string
  */
-func MakeImagePath(imageName, categoryPath string) string {
-	var path string
-	println("path= ", path)
-	return path
-}
-func MakeImagePaths(imageName, pathConfig []string) string {
-	path := ""
+func MakeImagePath(imageName string) string {
+	basePath := config.Image.ImagePath
+	categoryPath := config.Image.ImageCategroies[0]
+	orgPath := config.Image.ImageOrg
+	now := time.Now().Format("2006-01-02")
+	hashName := MakeImageName(imageName)
+
+	// 取前两个字符作为 mod 目录
+	hexMod := hashName[:2]
+	// path format : upload/car/org/4a/20190923/4a3f.jpg
+	path := filepath.Join(basePath, categoryPath, orgPath, hexMod, now)
+
 	return path
 }
 
@@ -234,27 +304,13 @@ func MakeImagePaths(imageName, pathConfig []string) string {
  * @param number permission 默认 0755
  * @return boolean|unknown
  */
-func CreateImagePath(basePath, imageName, categoryPath string) string {
-	orgPath := config.Image.ImageOrg
-	now := time.Now().Format("2006-01-02")
-	hashName := MakeImageName(imageName)
+func CreateImagePath(mpath string, permission os.FileMode) string {
+	if permission == 0 {
+		permission = 0777
+	}
+	os.MkdirAll(mpath, permission)
 
-	// 取前两个字符作为 mod 目录
-	hexMod := hashName[:2]
-	path := filepath.Join(basePath, categoryPath, orgPath, now, hexMod)
-	os.MkdirAll(path, 0777)
-
-	return path
-}
-
-/**
- * 根据mime类型获取扩展名
- * @param string fileType
- * @return string
- */
-func getExtendName(fileType string) string {
-	realType := "jpg"
-	return realType
+	return mpath
 }
 
 /**
@@ -262,18 +318,22 @@ func getExtendName(fileType string) string {
  * @param string path ./category/200x200/2019-06-24/19/19a34.jpg
  * @return string
  */
-func GetImageOrgPath(fpath string) string {
-	if fpath == "" {
+func GetImageOrgPath(scalaPath string) string {
+	if scalaPath == "" {
 		return ""
 	}
 
 	imageOrg := config.Image.ImageOrg
-	imageSize := GetImageSizeByPath(fpath)
+	imageSize := GetImageSizeByPath(scalaPath)
 
 	// 返回将s中前n个不重叠old子串都替换为new的新字符串，如果n<0会替换所有old子串。
-	strings.Replace(fpath, imageSize, imageOrg, 1)
+	println("scalaPath ", scalaPath)
+	println("imageOrg ", imageSize)
+	println("imageOrg ", imageOrg)
+	orgPath := strings.Replace(scalaPath, imageSize, imageOrg, 1)
+	println("orgPath ", orgPath)
 	// path.Split(fpath)
-	return fpath
+	return orgPath
 }
 
 /**
@@ -283,7 +343,7 @@ func GetImageOrgPath(fpath string) string {
  */
 func GetImageSizeByPath(path string) string {
 	// over
-	strs := regexp.MustCompile(`/[a-zA-Z0-9]+x[0-9]+/`).FindAllString(path, -1)
+	strs := regexp.MustCompile(`[a-zA-Z0-9]+x[0-9]+`).FindAllString(path, -1)
 	if len(strs) == 0 {
 		return ""
 	}
@@ -295,11 +355,17 @@ func GetImageSizeByPath(path string) string {
  * 根据图片路径获得图片分类
  * @param string path http://static.xxx.com/image/category/200x200/2019-06-24/19/19a34.jpg
  */
-func GetImageCategoryByPath(path string) string {
+func GetImageCategoryByPath(mpath string) string {
+	mpath = strings.Replace(mpath, "", config.Image.ImagePath, 0)
+	println("mpath ", mpath)
 	// over
-	categorys := strings.Split(path, "/")
+	categorys := strings.Split(mpath, "/")
+	// for i, cate := range categorys {
+	// 	fmt.Printf("categorys %d %v\n", i, cate)
+	// }
+
 	if len(categorys) > 2 {
-		return categorys[2]
+		return categorys[1]
 	}
 	return ""
 }

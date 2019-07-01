@@ -19,6 +19,16 @@ type ImageController struct {
 	Di  iris.Context
 }
 
+func (i *ImageController) Get() {
+	path := i.Ctx.Path()
+	host := i.Ctx.Host()
+	println("get")
+	println(host)
+	fmt.Printf("%v\n", path)
+	// imgmanager.ResizeImageByOrg(path)
+	i.Ctx.Writef("%s", path)
+}
+
 func (c *ImageController) GetUpload(ctx iris.Context) mvc.Result {
 
 	return mvc.View{
@@ -82,9 +92,9 @@ func (c *ImageController) PostUpload2(ctx iris.Context) {
 		conf = config
 	})
 	imgPath = conf.Image.ImagePath
-	_, fileHeader, _ := ctx.FormFile("uploadfile")
+	// _, fileHeader, _ := ctx.FormFile("uploadfile")
 
-	filePath := imgmanager.CreateImagePath(imgPath, fileHeader.Filename, "category")
+	filePath := imgmanager.CreateImagePath(imgPath, 0777)
 	println(filePath)
 	// iris 保存图片
 	ctx.UploadFormFiles(filePath, func(ctx iris.Context, file *multipart.FileHeader) {
@@ -95,4 +105,16 @@ func (c *ImageController) PostUpload2(ctx iris.Context) {
 		// 这里的路径要和上面填的保持一致
 		ctx.Writef("%s", fileName)
 	})
+}
+
+func (i *ImageController) GetCreateimage() {
+	path := i.Ctx.Path()
+	host := i.Ctx.Host()
+	rPath := i.Ctx.RequestPath(true)
+	println("CreateResizeOrgImage")
+	println(host)
+	fmt.Printf("%v\n", path)
+	fmt.Printf("requestPath %v\n", rPath)
+	// imgmanager.ResizeImageByOrg(path)
+	i.Ctx.Writef("%s", path)
 }
