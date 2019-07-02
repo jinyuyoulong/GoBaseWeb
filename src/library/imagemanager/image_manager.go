@@ -1,14 +1,15 @@
-package imgmanager
+package imagemanager
 
 import (
 	"crypto/md5"
+	"encoding/binary"
 	"encoding/hex"
 	"errors"
 	"io"
+	"mime"
 	"mime/multipart"
 	"os"
 	"path/filepath"
-	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
@@ -22,11 +23,22 @@ import (
 var config *service.Config
 
 func init() {
-	config = GetConfig()
+	config = getConfig()
 }
 
 // UploadedImage 接收图片
 func UploadedImage(file multipart.File, fileheader *multipart.FileHeader, category string, isSave bool) (filePath string, err error) {
+
+	var isHaveCategory bool
+	for _, item := range config.Image.ImageCategroies {
+		if item == category {
+			isHaveCategory = true
+		}
+	}
+
+	if !isHaveCategory {
+		return "", errors.New("无效的图片分类")
+	}
 
 	var fileName string
 	fileName = fileheader.Filename
@@ -34,17 +46,76 @@ func UploadedImage(file multipart.File, fileheader *multipart.FileHeader, catego
 		return "", errors.New("没有要上传的文件")
 	}
 
-	hashname := MakeImageName(fileName)
+	hashname := makeImageName(fileName)
 
 	// 创建路径
-	fileDictionary := MakeImagePath(fileName)
-	CreateImagePath(fileDictionary, 0)
-	//fileDictionary + "/" + hashname
-	filePath = filepath.Join(fileDictionary, hashname)
-	err = SaveImage(filePath, file, 0)
+	fileDictionary := makeImagePath(fileName)
+	err = createImagePath(fileDictionary, 0)
 	if err != nil {
 		return "", err
 	}
+
+	//fileDictionary + "/" + hashname
+	filePath = filepath.Join(fileDictionary, hashname)
+	err = saveImage(filePath, file, 0)
+	if err != nil {
+		return "", err
+	}
+
+	// ===========
+
+	basePath := config.Image.ImagePath
+
+	savePath := basePath
+	if !isSave {
+		savePath = savePath + config.Image.ImageTmp + "/"
+	}
+
+	savePath += category + "/" + config.Image.ImageOrg + "/"
+
+	// Print the real file names and their sizes
+	var result []map[string]string
+	key := 0
+
+	// for _, file := range files {
+	// // TODO
+	// result[key]["upload_name"] = file->getName();
+	// result[key]["error"] = file->getError();
+
+	result[key]["upload_name"] = fileName
+	// MIMEHeader代表一个MIME头，将键映射为值的集合。
+	// type MIMEHeader map[string][]string
+	content_type := fileheader.Header.Get("Content-Type")
+	fileType, _, _ := mime.ParseMediaType(content_type)
+	// if fileType == "" {
+	//     fileType = file->getType();
+	// }
+	extendName := getExtendName(fileType)
+	newName := makeImageName(fileName)
+	newPath := makeImagePath(newName)
+	filePath = savePath + newPath
+	err = createImagePath(filePath, 0)
+	if err != nil {
+		result[key]["error"] = "保存失败"
+	}
+	filePath = filePath + newName + "." + extendName
+
+	// if (! this->moveImage(file, filePath)) {
+	//     result[key]["error"] = "保存失败";
+	// }
+	// imageUrl = str_replace(basePath, this->config->image->image_url, filePath);
+	// imagePath = str_replace(basePath, "", filePath);
+	// result[key]["file_url"] = imageUrl;
+	// result[key]["file_path"] = imagePath;
+
+	// // TODO get image size
+	// image = this->getImage(filePath);
+	// result[key]["width"] = image->getWidth();
+	// result[key]["height"] = image->getHeight();
+	key++
+	// }
+	// TODO BeanStack is_save = true
+
 	return filePath, nil
 }
 
@@ -57,36 +128,33 @@ func UploadedImage(file multipart.File, fileheader *multipart.FileHeader, catego
 */
 func ResizeImageByOrg(scalaPath string) error {
 
-	category := GetImageCategoryByPath(scalaPath)
+	category := getImageCategoryByPath(scalaPath)
 
-	size := GetImageSizeByPath(scalaPath)
+	size := getImageSizeByPath(scalaPath)
 
 	if category == "" || size == "" {
 		return errors.New("图片路径错误")
 	}
 
-	oType := reflect.TypeOf(config.Image.ImageCategory)
-	var isHaveCate bool
-	var index int
-	for i := 0; i < oType.NumField(); i++ {
-		f := oType.Field(i)
-		if f.Name == category {
-			isHaveCate = true
-			index = i
+	var isHaveCategory bool
+	for _, item := range config.Image.ImageCategroies {
+		if item == category {
+			isHaveCategory = true
 		}
 	}
 
-	confCategory := config.Image.ImageCategroies[index]
-
-	if confCategory != category && !isHaveCate {
-		return errors.New("图片没有当前分类")
+	if !isHaveCategory {
+		return errors.New("无效的图片分类")
 	}
 
-	carLogo := config.Image.ImageCategory.CarLogo
-
+	var csizes []string
+	if category == "carlogo" {
+		carLogo := config.Image.ImageCategory.CarLogo
+		csizes = carLogo.GetSizes()
+	}
 	// 判断size是否是受支持的，在配置文件中
 	var ok bool
-	for _, value := range carLogo.Sizes {
+	for _, value := range csizes {
 		if value == size {
 			ok = true
 			break
@@ -95,23 +163,24 @@ func ResizeImageByOrg(scalaPath string) error {
 	if !ok {
 		return errors.New("请求图片规格错误")
 	}
+
 	sizes := strings.Split(size, "x")
 	width, _ := strconv.Atoi(sizes[0])
 	height, _ := strconv.Atoi(sizes[1])
 
-	orgPath := GetImageOrgPath(scalaPath) // 根据缩略图path 获取org path
+	orgPath := getImageOrgPath(scalaPath) // 根据缩略图path 获取org path
 	if orgPath == "" {
 		return errors.New("org 图片为空")
 	}
 
 	// get image resize save
-	image := GetImage(orgPath, scalaPath, uint(width), uint(height))
+	image := getImage(orgPath, scalaPath, uint(width), uint(height))
 	if image != nil {
 		return errors.New("获取源图失败")
 	}
 
 	// scalaImage := ResizeImage(width, height)
-	//         return $this->saveImage($filePath);
+	// return this->saveImage(filePath);
 	return nil
 }
 
@@ -121,8 +190,30 @@ func ResizeImageByOrg(scalaPath string) error {
  * @param  URI // https://static.xx.com/app_images/car/org/mod/date/hax.png
  * @return string
  */
-func GetImagePath(rPath string) string {
-	return rPath
+func getImagePath(rPath string) string {
+	targetPath := filepath.Join(config.Image.ImagePath, rPath)
+	return targetPath
+}
+
+/**
+ * 根据mine类型获取扩展名
+ *
+ * @param unknown fileType
+ * @return string
+ */
+func getExtendName(fileType string) string {
+	if fileType == "" {
+		return ""
+	}
+
+	res := strings.Split(fileType, "/")[1]
+
+	// // 修正ie pjpeg 问题
+	res = strings.ToLower(res)
+	if res == "pjpeg" {
+		res = "jpg"
+	}
+	return res
 }
 
 /**
@@ -131,8 +222,8 @@ func GetImagePath(rPath string) string {
  * @param string fileName /car/org/mod/date/hax.png ==> ../app_images/car/org/mod/date/hax.png
  * @return NULL|mixed <NULL, GD, Imagick>
  */
-func GetImage(orgPath, scalaPath string, swidth, sheight uint) error {
-	orgPath = filepath.Join(config.Image.ImagePath, orgPath)
+func getImage(orgPath, scalaPath string, swidth, sheight uint) error {
+	orgPath = getImagePath(orgPath)
 	// realPath := strings.Replace(orgPath)
 
 	imagick.Initialize()
@@ -153,7 +244,7 @@ func GetImage(orgPath, scalaPath string, swidth, sheight uint) error {
 	width := mw.GetImageWidth()
 	height := mw.GetImageHeight()
 	// ----------
-	//  压缩image
+	//  压缩裁剪 image
 	width = swidth
 	height = sheight
 
@@ -172,7 +263,7 @@ func GetImage(orgPath, scalaPath string, swidth, sheight uint) error {
 		scalaPath += subPath + "/"
 	}
 
-	CreateImagePath(scalaPath, 0)
+	createImagePath(scalaPath, 0)
 	scalaFile := scalaPath + fileName
 	//导出图片
 	err = mw.WriteImage(scalaFile)
@@ -203,11 +294,12 @@ func GetImage(orgPath, scalaPath string, swidth, sheight uint) error {
  * @param unknown offsetY
  * @return boolean
  */
-func cropImage(width, height uint, offsetX, offsetY int) error {
+func cropImage(mpath string, width, height uint, offsetX, offsetY int) error {
+	mpath = getImagePath(mpath)
 	mw := imagick.NewMagickWand()
-	err := mw.ReadImage("header:")
+	err := mw.ReadImage(mpath)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	err = mw.CropImage(width, height, offsetX, offsetY)
 	if err != nil {
@@ -221,10 +313,9 @@ func cropImage(width, height uint, offsetX, offsetY int) error {
  * 保存图片
  *
  * @param unknown file
- * @param number quality = 90 默认画质
  * @return boolean
  */
-func SaveImage(filePath string, file multipart.File, permission os.FileMode) error {
+func saveImage(filePath string, file multipart.File, permission os.FileMode) error {
 	// 打开文件
 	//  default 0666
 	if permission == 0 {
@@ -251,7 +342,7 @@ func SaveImage(filePath string, file multipart.File, permission os.FileMode) err
  * @param unknown imageName
  * @return unknown
  */
-func MakeImageName(imageName string) (hashName string) {
+func makeImageName(imageName string) (hashName string) {
 
 	// 	orginal.jpg
 	index := strings.LastIndex(imageName, ".")
@@ -262,6 +353,7 @@ func MakeImageName(imageName string) (hashName string) {
 	substr := imageName[:index]
 	suffix := imageName[index:]
 	cryptomd5 := md5.New()
+
 	cryptomd5.Write([]byte(substr))
 	hashNameByte := cryptomd5.Sum(nil)
 	hashName = hex.EncodeToString(hashNameByte) // 转成16进制字符串
@@ -275,18 +367,23 @@ func MakeImageName(imageName string) (hashName string) {
  * @param unknown pathConfig
  * @return string
  */
-func MakeImagePath(imageName string) string {
+func makeImagePath(imageName string) string {
 	basePath := config.Image.ImagePath
 	categoryPath := config.Image.ImageCategroies[0]
 	orgPath := config.Image.ImageOrg
 	now := time.Now().Format("2006-01-02")
-	hashName := MakeImageName(imageName)
+	hashName := makeImageName(imageName)
 
 	// 取前两个字符作为 mod 目录
-	hexMod := hashName[:2]
+	hexMod := hashName[:4]
+	hexBytes, _ := hex.DecodeString(hexMod)
+	number := binary.BigEndian.Uint16(hexBytes)
 	// path format : upload/car/org/4a/20190923/4a3f.jpg
+	mod := uint16(10)
+	resultMod := int(number%mod + 1)
+	hexMod = strconv.Itoa(resultMod)
 	path := filepath.Join(basePath, categoryPath, orgPath, hexMod, now)
-
+	println(path)
 	return path
 }
 
@@ -294,16 +391,20 @@ func MakeImagePath(imageName string) string {
  * 创建文件路径
  *
  * @param string path
- * @param number permission 默认 0755
+ * @param number permission 默认 0755 上线可改为 2777 本地该权限无法写入
  * @return boolean|unknown
  */
-func CreateImagePath(mpath string, permission os.FileMode) string {
+func createImagePath(mpath string, permission os.FileMode) error {
 	if permission == 0 {
-		permission = 0777
+		// TODO
+		permission = 0755
 	}
-	os.MkdirAll(mpath, permission)
+	err := os.MkdirAll(mpath, permission)
+	if err != nil {
+		return err
+	}
 
-	return mpath
+	return nil
 }
 
 /**
@@ -311,13 +412,13 @@ func CreateImagePath(mpath string, permission os.FileMode) string {
  * @param string path ./category/200x200/2019-06-24/19/19a34.jpg
  * @return string
  */
-func GetImageOrgPath(scalaPath string) string {
+func getImageOrgPath(scalaPath string) string {
 	if scalaPath == "" {
 		return ""
 	}
 
 	imageOrg := config.Image.ImageOrg
-	imageSize := GetImageSizeByPath(scalaPath)
+	imageSize := getImageSizeByPath(scalaPath)
 
 	// 返回将s中前n个不重叠old子串都替换为new的新字符串，如果n<0会替换所有old子串。
 	orgPath := strings.Replace(scalaPath, imageSize, imageOrg, 1)
@@ -330,7 +431,7 @@ func GetImageOrgPath(scalaPath string) string {
  * @param unknown path 200x200/2019-06-24/19/19a34.jpg
  * @return string|unknown
  */
-func GetImageSizeByPath(path string) string {
+func getImageSizeByPath(path string) string {
 	// over
 	strs := regexp.MustCompile(`[a-zA-Z0-9]+x[0-9]+`).FindAllString(path, -1)
 	if len(strs) == 0 {
@@ -342,9 +443,9 @@ func GetImageSizeByPath(path string) string {
 
 /**
  * 根据图片路径获得图片分类
- * @param string path http://static.xxx.com/image/category/200x200/2019-06-24/19/19a34.jpg
+ * @param string path /category/200x200/2019-06-24/19/19a34.jpg
  */
-func GetImageCategoryByPath(mpath string) string {
+func getImageCategoryByPath(mpath string) string {
 	mpath = strings.Replace(mpath, "", config.Image.ImagePath, 0)
 	// over
 	categorys := strings.Split(mpath, "/")
@@ -358,7 +459,7 @@ func GetImageCategoryByPath(mpath string) string {
 	return ""
 }
 
-func GetConfig() *service.Config {
+func getConfig() *service.Config {
 	var config *service.Config
 	service.GetDi().Container.Invoke(func(conf *service.Config) {
 		config = conf

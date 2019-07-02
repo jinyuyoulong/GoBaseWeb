@@ -35,10 +35,23 @@ type Config struct {
 		ImageCategroies []string
 		// ImageCategory imageCategory `toml:"imageCategory"`
 		ImageCategory struct {
-			CarLogo struct {
-				Paths string   `toml:"paths"`
-				Sizes []string `toml:"sizes"`
-			} `toml:"carLogo"`
+			CarLogo CarLogo `toml:"carLogo"`
 		} `toml:"imageCategory"`
 	}
+}
+
+type CarLogo struct {
+	Paths string   `toml:"paths"`
+	Sizes []string `toml:"sizes"`
+}
+type Category interface {
+	GetPath() string
+	GetSizes() []string
+}
+
+func (c *CarLogo) GetPath() string {
+	return c.Paths
+}
+func (c *CarLogo) GetSizes() []string {
+	return c.Sizes
 }

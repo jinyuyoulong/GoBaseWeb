@@ -1,20 +1,28 @@
 package main
 
 import (
+	"project-web/src/bootstrap/middleware"
 	"project-web/src/bootstrap/route"
 	"project-web/src/bootstrap/service"
 
 	"github.com/kataras/iris"
+
 	"github.com/kataras/iris/view"
 )
 
 func main() {
-	app := iris.New()
+	app := initApplication()
 
 	setApplication(app)
 }
 
+func initApplication() *iris.Application {
+	app := iris.New()
+	return app
+}
 func setApplication(app *iris.Application) {
+
+	middleware.RegistMiddleware(app)
 
 	route.SetRoute(app)
 
