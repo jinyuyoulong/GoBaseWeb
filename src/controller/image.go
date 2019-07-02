@@ -3,7 +3,6 @@
 package controller
 
 import (
-	"fmt"
 	"mime/multipart"
 
 	"project-web/src/bootstrap/service"
@@ -21,11 +20,6 @@ type ImageController struct {
 
 func (i *ImageController) Get() {
 	path := i.Ctx.Path()
-	host := i.Ctx.Host()
-	println("get")
-	println(host)
-	fmt.Printf("%v\n", path)
-	// imgmanager.ResizeImageByOrg(path)
 	i.Ctx.Writef("%s", path)
 }
 
@@ -55,22 +49,21 @@ func (c *ImageController) PostUpload(ctx iris.Context) {
 		conf = config
 	})
 
-	filePath := imgmanager.UploadedImage(file, fileHeader, conf.Image.ImageCategroies[0], true)
+	_, err = imgmanager.UploadedImage(file, fileHeader, conf.Image.ImageCategroies[0], true)
 
 	var msg string
-	if filePath != "" {
-		msg = "图片上传成功"
+	if err != nil {
+		msg = err.Error()
 	} else {
-		msg = "图片上传失败"
+		msg = "图片上传成功"
 	}
-	println(filePath)
+
 	ctx.JSON(iris.Map{
 		"status":  true,
 		"message": msg,
 	})
 }
 func (c *ImageController) GetUpload2(ctx iris.Context) mvc.Result {
-	fmt.Println("get Upload2")
 	return mvc.View{
 		Name: "image/index.html",
 		Data: iris.Map{
@@ -81,7 +74,7 @@ func (c *ImageController) GetUpload2(ctx iris.Context) mvc.Result {
 
 // 多文件上传，求模运算的时候会将多文件看为一个文件 进行计算。计算结果将和单文件上传的地址不一样。不建议使用
 func (c *ImageController) PostUpload2(ctx iris.Context) {
-	fmt.Println("PostUpload2 只能浏览器测试，不能用 postman")
+	// PostUpload2 只能浏览器测试，不能用 postman
 	// 5MB
 	const maxSize = 5 << 20
 	iris.LimitRequestBodySize(maxSize + 1<<20)
@@ -95,26 +88,27 @@ func (c *ImageController) PostUpload2(ctx iris.Context) {
 	// _, fileHeader, _ := ctx.FormFile("uploadfile")
 
 	filePath := imgmanager.CreateImagePath(imgPath, 0777)
-	println(filePath)
 	// iris 保存图片
 	ctx.UploadFormFiles(filePath, func(ctx iris.Context, file *multipart.FileHeader) {
 		hashname := imgmanager.MakeImageName(file.Filename)
 		file.Filename = hashname
 		fileName := filePath + "/" + file.Filename
-		println(fileName)
 		// 这里的路径要和上面填的保持一致
 		ctx.Writef("%s", fileName)
 	})
 }
 
-func (i *ImageController) GetCreateimage() {
-	path := i.Ctx.Path()
+// GetResizeimage 生成指定的缩略图
+// 接受参数格式：http://static.com/image/resizeimage?path=/carlogo/100x100/8b/2019-07-01/8b18.jpg
+func (i *ImageController) GetResizeimage() {
+	tPath := i.Ctx.URLParam("path")
 	host := i.Ctx.Host()
-	rPath := i.Ctx.RequestPath(true)
-	println("CreateResizeOrgImage")
-	println(host)
-	fmt.Printf("%v\n", path)
-	fmt.Printf("requestPath %v\n", rPath)
-	// imgmanager.ResizeImageByOrg(path)
-	i.Ctx.Writef("%s", path)
+	err := imgmanager.ResizeImageByOrg(tPath)
+	if err != nil {
+		i.Ctx.Writef("%v", err.Error())
+	} else {
+		URL := host + tPath
+		i.Ctx.Writef("%v", URL)
+		// i.Ctx.Redirect(host + tPath)
+	}
 }

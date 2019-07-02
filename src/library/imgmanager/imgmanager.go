@@ -3,7 +3,7 @@ package imgmanager
 import (
 	"crypto/md5"
 	"encoding/hex"
-	"fmt"
+	"errors"
 	"io"
 	"mime/multipart"
 	"os"
@@ -25,14 +25,13 @@ func init() {
 	config = GetConfig()
 }
 
-// ============
-//
-func UploadedImage(file multipart.File, fileheader *multipart.FileHeader, category string, isSave bool) string {
+// UploadedImage 接收图片
+func UploadedImage(file multipart.File, fileheader *multipart.FileHeader, category string, isSave bool) (filePath string, err error) {
 
 	var fileName string
 	fileName = fileheader.Filename
 	if fileName == "" {
-		fmt.Println("没有要上传的文件")
+		return "", errors.New("没有要上传的文件")
 	}
 
 	hashname := MakeImageName(fileName)
@@ -40,10 +39,13 @@ func UploadedImage(file multipart.File, fileheader *multipart.FileHeader, catego
 	// 创建路径
 	fileDictionary := MakeImagePath(fileName)
 	CreateImagePath(fileDictionary, 0)
-	filePath := filepath.Join(fileDictionary, hashname) //fileDictionary + "/" + hashname
-	fmt.Println("filePath ", filePath)
-	SaveImage(filePath, file, 0)
-	return filePath
+	//fileDictionary + "/" + hashname
+	filePath = filepath.Join(fileDictionary, hashname)
+	err = SaveImage(filePath, file, 0)
+	if err != nil {
+		return "", err
+	}
+	return filePath, nil
 }
 
 /**
@@ -53,14 +55,14 @@ func UploadedImage(file multipart.File, fileheader *multipart.FileHeader, catego
 /carlogo/100x100/8b/2019-06-28/8b18.jpg
 * @return boolean
 */
-func ResizeImageByOrg(scalaPath string) bool {
-	println("scalaPath: ", scalaPath)
+func ResizeImageByOrg(scalaPath string) error {
+
 	category := GetImageCategoryByPath(scalaPath)
-	println("cate: ", category)
+
 	size := GetImageSizeByPath(scalaPath)
-	println("size: ", size)
+
 	if category == "" || size == "" {
-		return false
+		return errors.New("图片路径错误")
 	}
 
 	oType := reflect.TypeOf(config.Image.ImageCategory)
@@ -77,7 +79,7 @@ func ResizeImageByOrg(scalaPath string) bool {
 	confCategory := config.Image.ImageCategroies[index]
 
 	if confCategory != category && !isHaveCate {
-		fmt.Errorf("图片没有当前分类")
+		return errors.New("图片没有当前分类")
 	}
 
 	carLogo := config.Image.ImageCategory.CarLogo
@@ -85,36 +87,32 @@ func ResizeImageByOrg(scalaPath string) bool {
 	// 判断size是否是受支持的，在配置文件中
 	var ok bool
 	for _, value := range carLogo.Sizes {
-		fmt.Println(value, size)
 		if value == size {
 			ok = true
-			fmt.Println("请求图片规格正确")
 			break
 		}
 	}
 	if !ok {
-		fmt.Println("请求图片规格错误")
-		return false
+		return errors.New("请求图片规格错误")
 	}
 	sizes := strings.Split(size, "x")
 	width, _ := strconv.Atoi(sizes[0])
 	height, _ := strconv.Atoi(sizes[1])
-	fmt.Printf("width %v,height %v\n", width, height)
 
 	orgPath := GetImageOrgPath(scalaPath) // 根据缩略图path 获取org path
 	if orgPath == "" {
-		return false
+		return errors.New("org 图片为空")
 	}
+
 	// get image resize save
 	image := GetImage(orgPath, scalaPath, uint(width), uint(height))
-
 	if image != nil {
-		fmt.Errorf("没有源图片")
+		return errors.New("获取源图失败")
 	}
 
 	// scalaImage := ResizeImage(width, height)
 	//         return $this->saveImage($filePath);
-	return true
+	return nil
 }
 
 /**
@@ -133,7 +131,7 @@ func GetImagePath(rPath string) string {
  * @param string fileName /car/org/mod/date/hax.png ==> ../app_images/car/org/mod/date/hax.png
  * @return NULL|mixed <NULL, GD, Imagick>
  */
-func GetImage(orgPath, scalaPath string, swidth, sheight uint) *imagick.MagickWand {
+func GetImage(orgPath, scalaPath string, swidth, sheight uint) error {
 	orgPath = filepath.Join(config.Image.ImagePath, orgPath)
 	// realPath := strings.Replace(orgPath)
 
@@ -146,16 +144,14 @@ func GetImage(orgPath, scalaPath string, swidth, sheight uint) *imagick.MagickWa
 
 	err = mw.ReadImage(orgPath)
 	if err != nil {
-		fmt.Println("ReadImage: ", err)
-		return nil
+		return err
 	}
 
-	image := mw.GetImage()
+	// mw.GetImage()
 
 	// Get original logo size
 	width := mw.GetImageWidth()
 	height := mw.GetImageHeight()
-	println("imagic get width and height: ", width, " ", height)
 	// ----------
 	//  压缩image
 	width = swidth
@@ -164,7 +160,7 @@ func GetImage(orgPath, scalaPath string, swidth, sheight uint) *imagick.MagickWa
 	err = mw.ResizeImage(width, height, imagick.FILTER_LANCZOS)
 
 	if err != nil {
-		fmt.Printf("resize image fild! %v", err.Error())
+		return err
 	}
 	// ---------
 	scalaPath = filepath.Join(config.Image.ImagePath, scalaPath)
@@ -175,15 +171,15 @@ func GetImage(orgPath, scalaPath string, swidth, sheight uint) *imagick.MagickWa
 		subPath := scalaPaths[i]
 		scalaPath += subPath + "/"
 	}
-	println("scalaPath remove jpg: ", scalaPath)
+
 	CreateImagePath(scalaPath, 0)
 	scalaFile := scalaPath + fileName
 	//导出图片
 	err = mw.WriteImage(scalaFile)
 	if err != nil {
-		fmt.Printf("保存图片失败 %v", err.Error())
+		return err
 	}
-	return image
+	return nil
 }
 
 /**
@@ -207,7 +203,7 @@ func GetImage(orgPath, scalaPath string, swidth, sheight uint) *imagick.MagickWa
  * @param unknown offsetY
  * @return boolean
  */
-func cropImage(width, height uint, offsetX, offsetY int) bool {
+func cropImage(width, height uint, offsetX, offsetY int) error {
 	mw := imagick.NewMagickWand()
 	err := mw.ReadImage("header:")
 	if err != nil {
@@ -215,11 +211,10 @@ func cropImage(width, height uint, offsetX, offsetY int) bool {
 	}
 	err = mw.CropImage(width, height, offsetX, offsetY)
 	if err != nil {
-		fmt.Println("cropImage: ", err.Error)
-		return false
+		return err
 	}
 
-	return true
+	return nil
 }
 
 /**
@@ -229,7 +224,7 @@ func cropImage(width, height uint, offsetX, offsetY int) bool {
  * @param number quality = 90 默认画质
  * @return boolean
  */
-func SaveImage(filePath string, file multipart.File, permission os.FileMode) bool {
+func SaveImage(filePath string, file multipart.File, permission os.FileMode) error {
 	// 打开文件
 	//  default 0666
 	if permission == 0 {
@@ -237,8 +232,7 @@ func SaveImage(filePath string, file multipart.File, permission os.FileMode) boo
 	}
 	out, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE, permission)
 	if err != nil {
-		panic(err.Error())
-		return false
+		return err
 	}
 
 	defer out.Close()
@@ -246,10 +240,9 @@ func SaveImage(filePath string, file multipart.File, permission os.FileMode) boo
 	// 写入文件
 	_, err = io.Copy(out, file)
 	if err != nil {
-		fmt.Printf("SaveImage: %s", err.Error())
-		return false
+		return err
 	}
-	return true
+	return nil
 }
 
 /**
@@ -327,11 +320,7 @@ func GetImageOrgPath(scalaPath string) string {
 	imageSize := GetImageSizeByPath(scalaPath)
 
 	// 返回将s中前n个不重叠old子串都替换为new的新字符串，如果n<0会替换所有old子串。
-	println("scalaPath ", scalaPath)
-	println("imageOrg ", imageSize)
-	println("imageOrg ", imageOrg)
 	orgPath := strings.Replace(scalaPath, imageSize, imageOrg, 1)
-	println("orgPath ", orgPath)
 	// path.Split(fpath)
 	return orgPath
 }
@@ -357,7 +346,6 @@ func GetImageSizeByPath(path string) string {
  */
 func GetImageCategoryByPath(mpath string) string {
 	mpath = strings.Replace(mpath, "", config.Image.ImagePath, 0)
-	println("mpath ", mpath)
 	// over
 	categorys := strings.Split(mpath, "/")
 	// for i, cate := range categorys {
