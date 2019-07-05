@@ -42,13 +42,13 @@ func (c *ImageController) PostUpload(ctx iris.Context) {
 		conf = config
 	})
 
-	filePath, err := imagemanager.UploadedImage(file, fileHeader, conf.Image.ImageCategroies[0], true)
-
+	result, err := imagemanager.UploadedImage(ctx, file, fileHeader, conf.Image.ImageCategroies[0], true)
 	if err != nil {
 		ctx.Application().Logger().Warnf(err.Error())
+		ctx.Writef("%v", err)
 	}
 
-	ctx.Writef("%v", filePath)
+	ctx.Writef("%v", result)
 }
 
 // GetResizeimage 生成指定的缩略图
@@ -56,9 +56,9 @@ func (c *ImageController) PostUpload(ctx iris.Context) {
 func (i *ImageController) GetResizeimage() {
 	tPath := i.Ctx.URLParam("path")
 	host := i.Ctx.Host()
-	err := imagemanager.ResizeImageByOrg(tPath)
-	if err != nil {
-		i.Ctx.Writef("%v", err.Error())
+	ok := imagemanager.ResizeImageByOrg(tPath)
+	if !ok {
+		i.Ctx.Writef("%v", "失败")
 	} else {
 		URL := host + tPath
 		i.Ctx.Writef("%v", URL)
