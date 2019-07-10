@@ -1,26 +1,33 @@
 package session
 
 import (
+	bservice "project-web/src/bootstrap/service"
+
 	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/sessions"
-	bservice "project-web/src/bootstrap/service"
 )
 
-func SessionGet(ctx context.Context,key string) string{
-	var value string
-	bservice.GetDi().Container.Invoke( func(sess *sessions.Sessions){
- 		value = sess.Start(ctx).GetString(key)
-	})
-	return value
-}
-func SessionSet(ctx context.Context,key string,value string){
-	bservice.GetDi().Container.Invoke( func(sess *sessions.Sessions){
-		sess.Start(ctx).Set(key,value)
+var thissession *sessions.Sessions
+
+func init() {
+	bservice.GetDi().Container.Invoke(func(sess *sessions.Sessions) {
+		thissession = sess
 	})
 }
 
-func SessionDelete(ctx context.Context,key string){
-	bservice.GetDi().Container.Invoke( func(sess *sessions.Sessions){
- 		sess.Start(ctx).Delete(key)
-	})
+// Set 增，改
+func Set(ctx context.Context, key string, value string) {
+	thissession.Start(ctx).Set(key, value)
+}
+
+// Get 查
+func Get(ctx context.Context, key string) string {
+	var value string
+	value = thissession.Start(ctx).GetString(key)
+	return value
+}
+
+// Delete 删
+func Delete(ctx context.Context, key string) {
+	thissession.Start(ctx).Delete(key)
 }

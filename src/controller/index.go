@@ -3,11 +3,14 @@
 package controller
 
 import (
+	"fmt"
 	"project-web/src/library/session"
 	"project-web/src/models"
 
 	"github.com/kataras/iris"
+	"github.com/kataras/iris/hero"
 	"github.com/kataras/iris/mvc"
+	"github.com/kataras/iris/sessions"
 )
 
 // IndexController index controller
@@ -70,13 +73,41 @@ func (c *IndexController) GetIndexHandler(context iris.Context) {
 	context.Writef("Hello from method: %s and path: %s", context.Method(), context.Path())
 }
 
+// Redis Session
+
 // GetSet /set set session in redis
 func (c *IndexController) GetSet(context iris.Context) {
-	session.SessionSet(context, "name", "iris")
+	name := c.Ctx.URLParam("name")
+	if name == "" {
+		name = "iris"
+	}
+	session.Set(context, "name", name)
+	context.Writef("写入 session 数据 name:%s", name)
 }
 
 // GetSession /session 获取session
-func (c *IndexController) GetSession(context iris.Context) {
-	name := session.SessionGet(context, "name")
-	context.Writef("The name on the /set was: %s", name)
+func (c *IndexController) GetSession(context iris.Context, session *sessions.Session) {
+	visits := session.Increment("visits", 1)
+
+	// name := session.SessionGet(context, "name")
+	context.Writef("%d visit(s) from my current session", visits)
+}
+
+// Native Session
+
+//Hello 默认 hero
+func Hello() hero.Result {
+	return hero.View{
+		Name: "index/hello.html",
+		Data: map[string]interface{}{
+			"Title":     "Hello Page",
+			"MyMessage": "Welcome to my awesome website",
+		},
+	}
+}
+
+// Session 默认session
+func Session(context iris.Context, session *sessions.Session) string {
+	visits := session.Increment("visits", 1)
+	return fmt.Sprintf("%d visit(s) from my current session", visits)
 }

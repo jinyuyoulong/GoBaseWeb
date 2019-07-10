@@ -8,7 +8,7 @@ import (
 
 var engine *xorm.Engine
 
-func Initialize() {
+func init() {
 	if engine == nil {
 		container := service.GetDi().Container
 		container.Invoke(func(db *xorm.Engine) {

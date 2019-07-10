@@ -4,6 +4,7 @@ import (
 	"project-web/src/controller"
 
 	"github.com/kataras/iris"
+	"github.com/kataras/iris/hero"
 	"github.com/kataras/iris/mvc"
 )
 
@@ -12,6 +13,11 @@ func SetRoute(route *iris.Application) {
 	IndexRoute(route)
 	AdminRoute(route)
 	ImageRout(route)
+
+	route.PartyFunc("/hello", func(r iris.Party) {
+		r.Get("/", hero.Handler(controller.Hello))
+		r.Get("/session", hero.Handler(controller.Session))
+	})
 }
 
 // IndexRoute 配置index route

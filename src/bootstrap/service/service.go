@@ -8,6 +8,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/go-xorm/xorm"
 	"github.com/kataras/iris"
+	"github.com/kataras/iris/hero"
 	"github.com/kataras/iris/sessions"
 	"github.com/kataras/iris/sessions/sessiondb/redis"
 	"github.com/kataras/iris/sessions/sessiondb/redis/service"
@@ -81,23 +82,41 @@ func db() *xorm.Engine {
 }
 
 func createSessions() *sessions.Sessions {
-	db := redis.New(service.Config{
-		Network:     "tcp",
-		Addr:        "127.0.0.1:6379",
-		Password:    "",
-		Database:    "",
-		MaxIdle:     0,
-		MaxActive:   10,
-		IdleTimeout: service.DefaultRedisIdleTimeout,
-		Prefix:      ""}) // optionally configure the bridge between your redis server
 
-	// close connection when control+C/cmd+C
-	iris.RegisterOnInterrupt(func() {
-		db.Close()
-	})
+	sessionConf := sessions.Config{
+		Cookie:  conf.Session.Cookie,
+		Expires: conf.Session.Expires * time.Minute,
+	}
+	sess := sessions.New(sessionConf)
 
-	sess := sessions.New(sessions.Config{Cookie: "sessionscookieid", Expires: 45 * time.Minute})
-	sess.UseDatabase(db)
+	if conf.Session.Dirver == "redis" {
+		timeout := conf.Redis.IdleTimeout
+		if timeout == 0 {
+			timeout = service.DefaultRedisIdleTimeout
+		} else {
+			timeout = conf.Redis.IdleTimeout
+		}
+		redisConf := service.Config{
+			Network:     conf.Redis.Network,
+			Addr:        conf.Redis.Addr,
+			Password:    conf.Redis.Password,
+			Database:    conf.Redis.Database,
+			MaxIdle:     conf.Redis.MaxIdle,
+			MaxActive:   conf.Redis.MaxActive,
+			IdleTimeout: timeout,
+			Prefix:      conf.Redis.Prefix,
+		}
+		db := redis.New(redisConf) // optionally configure the bridge between your redis server
+
+		// close connection when control+C/cmd+C
+		iris.RegisterOnInterrupt(func() {
+			db.Close()
+		})
+		sess.UseDatabase(db)
+	} else {
+		hero.Register(sess.Start)
+	}
+
 	return sess
 }
 

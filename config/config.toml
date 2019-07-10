@@ -18,6 +18,23 @@
   site_title = "后台管理"
   copy_right = "<small>&copy;2019</small>"
 
+[redis]
+  network = "tcp"
+  addr = "127.0.0.1:6379"
+  password = ""
+  database = ""
+  maxIdle = 0
+  maxActive = 10
+  # default 0 is use iris default set
+  idleTimeout = 0
+  prefix = ""
+
+[session]
+  cookie = "sessionscookieid"
+  # expires time is set in minute
+  expires = 1
+  dirver = "native"
+
 [image]
   image_lib = "Imagick" # GD || Imagick
   image_path   = "../app_images/" # 目录可读写
