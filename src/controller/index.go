@@ -37,7 +37,6 @@ type IndexController struct {
 // Get url: /
 func (c *IndexController) Get() mvc.Result {
 	datalist := models.CreateStrInfo().GetAll()
-
 	return mvc.View{
 		Name: "index/index.html",
 		Data: iris.Map{
@@ -45,6 +44,10 @@ func (c *IndexController) Get() mvc.Result {
 			"Datalist": datalist,
 		},
 	}
+}
+func (c *IndexController) GetPage() {
+	results := models.CreateUser().GetByPage(5, 1)
+	fmt.Printf("GetPage %T \n %v\n", results, results)
 }
 
 // GetBy url: /{id}

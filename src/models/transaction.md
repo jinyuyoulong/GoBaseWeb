@@ -9,7 +9,7 @@ import (
 	"os"
 
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/go-xorm/xorm"
+	"github.com/xormplus/xorm"
 )
 
 type Account struct {

@@ -6,13 +6,13 @@ import (
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/go-xorm/xorm"
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/hero"
 	"github.com/kataras/iris/sessions"
 	"github.com/kataras/iris/sessions/sessiondb/redis"
 	"github.com/kataras/iris/sessions/sessiondb/redis/service"
 	"github.com/kataras/iris/view"
+	"github.com/xormplus/xorm"
 
 	// "github.com/pelletier/go-toml"
 	"github.com/BurntSushi/toml"

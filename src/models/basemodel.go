@@ -3,7 +3,7 @@ package models
 import (
 	"project-web/src/bootstrap/service"
 
-	"github.com/go-xorm/xorm"
+	"github.com/xormplus/xorm"
 )
 
 var engine *xorm.Engine
