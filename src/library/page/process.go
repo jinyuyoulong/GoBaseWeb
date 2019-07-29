@@ -1,9 +1,9 @@
 package page
 
-import "project-web/src/library/page/model"
+import "project-web/src/library/page/pagemodel"
 
 //计算offset 和 limit
-func GetDbNum(condition model.PageQueryCondition) (dbnum model.DbNum) {
+func GetDbNum(condition pagemodel.PageQueryCondition) (dbnum model.DbNum) {
 	if condition.PageNum <= 1 {
 		condition.PageNum = 1
 	}

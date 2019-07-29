@@ -45,9 +45,11 @@ func (c *IndexController) Get() mvc.Result {
 		},
 	}
 }
-func (c *IndexController) GetPage() {
-	results := models.CreateUser().GetByPage(5, 1)
-	fmt.Printf("GetPage %T \n %v\n", results, results)
+
+// GetPageBy /api/page/pageId
+func (c *IndexController) GetPageBy(pageId int) {
+	results := models.CreateUser().GetByPage(1, pageId)
+	c.Ctx.Writef("GetPage %T \n %v\n", results, results)
 }
 
 // GetBy url: /{id}

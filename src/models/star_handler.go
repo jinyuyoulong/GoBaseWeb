@@ -50,7 +50,7 @@ func (StarInfo) GetStarInfoInfo(id int) *StarInfo {
 
 func (StarInfo) GetAll() []StarInfo {
 	// 集合的两种创建方式
-	// datalist := make([]model.StartInfo, 0)
+	// datalist := make([]pagemodel.StartInfo, 0)
 	datalist := []StarInfo{}
 	err := engine.Desc("id").Find(&datalist)
 	if err != nil {

@@ -2,7 +2,7 @@ package models
 
 import (
 	"log"
-	pageModel "project-web/src/library/page/model"
+	pageModel "project-web/src/library/page/pagemodel"
 )
 
 var signleUser User
@@ -26,7 +26,7 @@ func (User) GetSequence() string {
 }
 
 // InsertUser 增
-func (User) InsertUser(data *User) error {
+func (User) Insert(data *User) error {
 	_, err := engine.Insert(data)
 	return err
 }
@@ -42,14 +42,14 @@ func (User) Delete(id int) error {
 
 // UpdateUser 改
 // columns 判断强制更新
-func (User) UpdateUser(data *User, columns []string) error {
+func (User) Update(data *User, columns []string) error {
 	_, err := engine.Id(data.Id).MustCols(columns...).Update(data)
 	// 用到 MustCols 方法
 	return err
 }
 
 // GetUserInfo 查
-func (User) GetUserInfo(id int) *User {
+func (User) GetById(id int) *User {
 	data := &User{Id: id}
 	ok, err := engine.Get(data)
 	if ok && err == nil {
@@ -63,7 +63,7 @@ func (User) GetUserInfo(id int) *User {
 // GetAll 查all
 func (User) GetAll() []User {
 	// 集合的两种创建方式
-	// datalist := make([]model.StartInfo, 0)
+	// datalist := make([]pagemodel.StartInfo, 0)
 	datalist := []User{}
 	err := engine.Desc("id").Find(&datalist)
 	if err != nil {
