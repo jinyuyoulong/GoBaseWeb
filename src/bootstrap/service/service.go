@@ -6,12 +6,11 @@ import (
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/hero"
-	"github.com/kataras/iris/sessions"
-	"github.com/kataras/iris/sessions/sessiondb/redis"
-	"github.com/kataras/iris/sessions/sessiondb/redis/service"
-	"github.com/kataras/iris/view"
+	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/hero"
+	"github.com/kataras/iris/v12/sessions"
+	"github.com/kataras/iris/v12/sessions/sessiondb/redis"
+	"github.com/kataras/iris/v12/view"
 	"github.com/xormplus/xorm"
 
 	// "github.com/pelletier/go-toml"
@@ -90,22 +89,37 @@ func createSessions() *sessions.Sessions {
 	sess := sessions.New(sessionConf)
 
 	if conf.Session.Dirver == "redis" {
-		timeout := conf.Redis.IdleTimeout
-		if timeout == 0 {
-			timeout = service.DefaultRedisIdleTimeout
-		} else {
-			timeout = conf.Redis.IdleTimeout
-		}
-		redisConf := service.Config{
+		// iris v11
+		// timeout := conf.Redis.IdleTimeout
+		// if timeout == 0 {
+		// 	timeout = database.DefaultRedisTimeout
+		// } else {
+		// 	timeout = conf.Redis.IdleTimeout
+		// }
+		// redisConf := database.Config{
+			// Network:     conf.Redis.Network,
+			// Addr:        conf.Redis.Addr,
+			// Password:    conf.Redis.Password,
+			// Database:    conf.Redis.Database,
+			// MaxIdle:     conf.Redis.MaxIdle,
+			// MaxActive:   conf.Redis.MaxActive,
+			// IdleTimeout: timeout,
+			// Prefix:      conf.Redis.Prefix,
+		// }
+
+		// iris v12
+		redisConf := redis.Config{
 			Network:     conf.Redis.Network,
 			Addr:        conf.Redis.Addr,
 			Password:    conf.Redis.Password,
 			Database:    conf.Redis.Database,
-			MaxIdle:     conf.Redis.MaxIdle,
 			MaxActive:   conf.Redis.MaxActive,
-			IdleTimeout: timeout,
 			Prefix:      conf.Redis.Prefix,
+			Timeout:   time.Duration(30) * time.Second,
+			Delim:     "-",
+			Driver:    redis.Redigo(),//——> 默认值 // redis.Radix() can be used instead.
 		}
+	
 		db := redis.New(redisConf) // optionally configure the bridge between your redis server
 
 		// close connection when control+C/cmd+C

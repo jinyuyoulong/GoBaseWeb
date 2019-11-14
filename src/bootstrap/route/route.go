@@ -3,9 +3,9 @@ package route
 import (
 	"project-web/src/controller"
 
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/hero"
-	"github.com/kataras/iris/mvc"
+	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/hero"
+	"github.com/kataras/iris/v12/mvc"
 )
 
 // SetRoute 配置路由

@@ -6,8 +6,8 @@ import (
 	"project-web/src/bootstrap/service"
 	"project-web/src/library/imagemanager"
 
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/mvc"
+	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/mvc"
 )
 
 // ImageController index controller

@@ -18,7 +18,7 @@ import (
 	"project-web/src/bootstrap/service"
 
 	"github.com/gographics/imagick/imagick"
-	"github.com/kataras/iris"
+	"github.com/kataras/iris/v12"
 )
 
 var config *service.Config

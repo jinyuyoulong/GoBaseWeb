@@ -3,8 +3,8 @@ package session
 import (
 	bservice "project-web/src/bootstrap/service"
 
-	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/sessions"
+	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/v12/sessions"
 )
 
 var thissession *sessions.Sessions

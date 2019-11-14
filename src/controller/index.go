@@ -7,10 +7,10 @@ import (
 	"project-web/src/library/session"
 	"project-web/src/models"
 
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/hero"
-	"github.com/kataras/iris/mvc"
-	"github.com/kataras/iris/sessions"
+	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/hero"
+	"github.com/kataras/iris/v12/mvc"
+	"github.com/kataras/iris/v12/sessions"
 )
 
 // IndexController index controller

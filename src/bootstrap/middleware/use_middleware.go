@@ -1,8 +1,8 @@
 package middleware
 
 import (
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/middleware/logger"
+	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/middleware/logger"
 )
 
 // RegistMiddleware 注册中间件

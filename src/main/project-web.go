@@ -5,9 +5,9 @@ import (
 	"project-web/src/bootstrap/route"
 	"project-web/src/bootstrap/service"
 
-	"github.com/kataras/iris"
+	"github.com/kataras/iris/v12"
 
-	"github.com/kataras/iris/view"
+	"github.com/kataras/iris/v12/view"
 )
 
 func main() {
